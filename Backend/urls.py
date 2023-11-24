@@ -20,10 +20,3 @@ from django.urls import path
 urlpatterns = [
     path('admin/', admin.site.urls),
 ]
-
-
-#HE LLLO 
-#hi shadi
-#hi akshaya
-#hello all
-

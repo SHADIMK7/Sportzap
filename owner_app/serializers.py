@@ -2,7 +2,6 @@ from rest_framework import serializers
 from . models import *
 
 
-# Update your RegistrationSerializer to use CustomUser
 class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Owner

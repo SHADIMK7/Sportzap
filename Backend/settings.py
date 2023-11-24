@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'owner_app',
     'user_app',
 ]
 
@@ -124,6 +125,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+AUTH_USER_MODEL = "owner_app.Owner"
 
 # REST_FRAMEWORK = {
 # 'DEFAULT_AUTHENTICATION_CLASSES': [

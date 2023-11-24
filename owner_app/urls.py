@@ -1,4 +1,7 @@
 from django.urls import path
+from .views import *
+
 urlpatterns = [
-    path('', ),
+    path('',Registration.as_view(), name='registration'),
+
 ]

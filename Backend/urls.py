@@ -23,3 +23,5 @@ urlpatterns = [
 
 
 #HE LLLO 
+#hi shadi
+#hi akshaya

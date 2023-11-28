@@ -6,6 +6,9 @@ class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Owner
         fields = ['Organization_name', 'username', 'email', 'password', 'Phone_number']
+        extra_kwargs = {
+            'email': {'required': True, 'validators': []},
+        }
 
     def save(self):
         account = Owner(

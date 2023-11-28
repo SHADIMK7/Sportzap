@@ -5,13 +5,12 @@ from . models import *
 class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Owner
-        fields = ['Organization_name', 'first_name', 'last_name', 'email', 'password', 'Phone_number']
+        fields = ['Organization_name', 'username', 'email', 'password', 'Phone_number']
 
     def save(self):
         account = Owner(
             Organization_name=self.validated_data['Organization_name'],
-            first_name=self.validated_data['first_name'],
-            last_name=self.validated_data['last_name'],
+            username=self.validated_data['username'],
             email=self.validated_data['email'],
             Phone_number=self.validated_data['Phone_number'],
         )

@@ -24,3 +24,7 @@ class Turf(models.Model):
 
     def _str_(self):
         return self.name
+<<<<<<< HEAD
+=======
+
+>>>>>>> 572a62a45ebcf63dbc6a368c4740f21b35e5d398

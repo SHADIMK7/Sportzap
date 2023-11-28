@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import User
+from Backend import settings
+from owner_app.models import *
 from django.contrib.auth.models import AbstractUser,Group,Permission
 
 # Create your models here.
@@ -9,4 +12,20 @@ class Customer(AbstractUser):
     
     def __str__(self):
         return self.customer_mobile
+    
+class TurfBooking(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    user_name = models.CharField(max_length=55)
+    user_mobile = models.CharField(max_length=10)
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    price = models.FloatField()
+    payment_method = models.CharField(max_length=10)
+    turf = models.ForeignKey(Turf, on_delete=models.SET_NULL, null=True)
+    
+    def __str__(self):
+        return self.user_name
+    
+    
     

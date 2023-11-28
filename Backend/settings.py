@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'owner_app',
     'user_app',
+    'admin_app',
 ]
 
 MIDDLEWARE = [
@@ -83,7 +84,16 @@ DATABASES = {
     }
 }
 
-
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'sportzap',
+        'USER': 'postgres',
+        'PASSWORD': '123',
+        'HOST': 'localhost', 
+        'PORT': '5432',  
+}
+}
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 

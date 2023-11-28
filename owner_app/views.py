@@ -23,3 +23,21 @@ class Registration(generics.CreateAPIView):
             data = serializer.errors
         
         return Response(data)
+    
+    
+    
+class TurfView(generics.CreateAPIView, generics.ListAPIView):
+    queryset = Turf.objects.all()
+    serializer_class = TurfSerializer
+    
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            d = serializer.save()
+            data = {
+                "message" : "turf created successfully",
+                "turf name" : d.turf_name
+            }
+            return Response(data)
+        else:
+            return Response(serializer.errors)

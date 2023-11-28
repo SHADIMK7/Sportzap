@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Owner',
+            name='Customer',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('password', models.CharField(max_length=128, verbose_name='password')),
@@ -29,10 +29,9 @@ class Migration(migrations.Migration):
                 ('is_staff', models.BooleanField(default=False, help_text='Designates whether the user can log into this admin site.', verbose_name='staff status')),
                 ('is_active', models.BooleanField(default=True, help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.', verbose_name='active')),
                 ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
-                ('Organization_name', models.CharField(max_length=20)),
-                ('Phone_number', models.CharField(max_length=10)),
-                ('groups', models.ManyToManyField(related_name='owner_groups', to='auth.group')),
-                ('user_permissions', models.ManyToManyField(related_name='owner_user_permissions', to='auth.permission')),
+                ('phone_number', models.CharField(max_length=10)),
+                ('groups', models.ManyToManyField(related_name='customer_groups', to='auth.group')),
+                ('user_permissions', models.ManyToManyField(related_name='customer_user_permissions', to='auth.permission')),
             ],
             options={
                 'verbose_name': 'user',

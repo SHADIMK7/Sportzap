@@ -12,11 +12,11 @@ class CustomerRegistrationView(generics.CreateAPIView, generics.ListAPIView):
     def post(self, request): 
         mobile = request.data.get('customer_mobile')
         if Customer.objects.filter(customer_mobile = mobile).first():
-            return Response({"detail":"Mobile already exists"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status': "failed",'message': "Mobile number already exists",'response_code':status.HTTP_400_BAD_REQUEST})
         
         email = request.data.get('email')
         if Customer.objects.filter(email = email).first():
-            return Response({"detail":"Email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status': "failed",'message': "Email already exists",'response_code':status.HTTP_400_BAD_REQUEST})
         
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -28,3 +28,7 @@ class CustomerRegistrationView(generics.CreateAPIView, generics.ListAPIView):
             return Response(data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+class BookingView(generics.ListCreateAPIView):
+    queryset = TurfBooking.objects.all()
+    serializer_class = BookingSerializer

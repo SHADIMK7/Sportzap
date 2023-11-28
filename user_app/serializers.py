@@ -16,7 +16,7 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         account.save()
         return account
     
-            
-            
-        
-        
+class BookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TurfBooking
+        fields = '__all__'

@@ -11,10 +11,10 @@ class Customer(AbstractUser):
     user_permissions = models.ManyToManyField(Permission, related_name='customer_user_permissions')
     
     def __str__(self):
-        return self.customer_mobile
+        return self.username
     
 class TurfBooking(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
     user_name = models.CharField(max_length=55)
     user_mobile = models.CharField(max_length=10)
     date = models.DateField()

@@ -1,12 +1,10 @@
 from .serializers  import *
 from rest_framework import generics
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+
 # Create your views here.
 
-
-
-# class Login(generics.R):
-    
 
 class Registration(generics.CreateAPIView):
     serializer_class = RegistrationSerializer
@@ -16,12 +14,16 @@ class Registration(generics.CreateAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             account = serializer.save()
+            token, create = Token.objects.get_or_create(user=account)
+            token_key = token.key
+            print('token ', token)
             data ={
                 "message":"Account Created Successfully",
                 "Organization_name":account.Organization_name,
                 "username":account.username,
                 "email":account.email,
-                "Phone_number":account.Phone_number
+                "Phone_number":account.Phone_number,
+                "token":token_key
             }   
         else:
             data = serializer.errors
@@ -46,5 +48,10 @@ class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
         else:
             return Response(serializer.errors)
         
-# class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
+class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = TurfSerializer
+    
+    def get_queryset(self):
+        id = self.kwargs['id']
+        return Turf.objects.filter(id=id)
     

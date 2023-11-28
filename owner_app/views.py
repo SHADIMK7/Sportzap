@@ -36,7 +36,7 @@ class TurfView(generics.CreateAPIView, generics.ListAPIView):
             d = serializer.save()
             data = {
                 "message" : "turf created successfully",
-                "turf name" : d.turf_name
+                "turf name" : d.name
             }
             return Response(data)
         else:

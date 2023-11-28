@@ -15,12 +15,12 @@ class Amenity(models.Model):
         return self.name
     
 class Turf(models.Model):
-    turf_name = models.CharField(max_length=55)
-    turf_location = models.CharField(max_length=55)
-    turf_price = models.DecimalField(max_digits=10, decimal_places=2)
-    turfcourt_image = models.ImageField(upload_to='image/') 
-    turf_description = models.CharField(max_length=255)
-    turf_amenity = models.ManyToManyField(Amenity)
-        
+    name = models.CharField(max_length=55)
+    location = models.CharField(max_length=55)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    image = models.ImageField(upload_to='image/') 
+    description = models.CharField(max_length=255)
+    amenity = models.ManyToManyField(Amenity)
+
     def _str_(self):
-        return self.turf_name
+        return self.name

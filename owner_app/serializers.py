@@ -21,20 +21,20 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class TurfSerializer(serializers.ModelSerializer):
-    turf_amenity = serializers.PrimaryKeyRelatedField(queryset = Amenity.objects.all(), many=True)
+    amenity = serializers.PrimaryKeyRelatedField(queryset = Amenity.objects.all(), many=True)
     
     class Meta:
         model = Turf
-        fields = '_all_'
+        fields = "__all__"
         
     def create(self, validate_data):
         turf = Turf(
-            turf_name = validate_data['turf_name'].capitalize(),
-            turf_location = validate_data['turf_location'],
-            turf_image = validate_data['turf_image'],
-            turf_price = validate_data['turf_price'],
-            turf_description = validate_data['turf_description'],
-            turf_amenity = validate_data['turf_amenity']
+            name = validate_data['name'].capitalize(),
+            location = validate_data['location'],
+            image = validate_data['image'],
+            price = validate_data['price'],
+            description = validate_data['description'],
+            amenity = validate_data['amenity']
         )
         turf.save()
         return turf

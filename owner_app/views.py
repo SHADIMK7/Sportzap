@@ -80,12 +80,12 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
 #     queryset = PaymentHistory.objects.all()
 #     serializer_class = PaymentHistorySerializer
 
-class UpdatePaymentHistoryView(generics.UpdateAPIView):
-    def put(self, request, booking_id, *args, **kwargs):
-        booking = get_object_or_404(TurfBooking, pk=booking_id)
+# class UpdatePaymentHistoryView(generics.UpdateAPIView):
+#     def put(self, request, booking_id, *args, **kwargs):
+#         booking = get_object_or_404(TurfBooking, pk=booking_id)
         
-        if booking.has_expired():
-            PaymentHistory.objects.create(user=booking.user, amount=booking.price)
-            return Response({'message': 'Payment added to history.'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'message': 'Booking has not expired yet.'}, status=status.HTTP_400_BAD_REQUEST)
+#         if booking.has_expired():
+#             PaymentHistory.objects.create(user=booking.user, amount=booking.price)
+#             return Response({'message': 'Payment added to history.'}, status=status.HTTP_200_OK)
+#         else:
+#             return Response({'message': 'Booking has not expired yet.'}, status=status.HTTP_400_BAD_REQUEST)

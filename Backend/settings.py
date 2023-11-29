@@ -94,7 +94,11 @@ DATABASES = {
 #         'ENGINE': 'django.db.backends.postgresql',
 #         'NAME': 'sportzap',
 #         'USER': 'postgres',
+<<<<<<< HEAD
 #         'PASSWORD': '12345',
+=======
+#         'PASSWORD': '1234',
+>>>>>>> d7a316f6dee334f1213ff72e18804d3eea238471
 #         'HOST': 'localhost', 
 #         'PORT': '5432',
 #    }
@@ -148,3 +152,10 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
 }
+
+
+
+AUTHENTICATION_BACKENDS = [
+    'owner_app.authentication_backends.EmailOrUsernameModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]

@@ -4,3 +4,4 @@ from .models import *
 
 admin.site.register(Turf)
 admin.site.register(Amenity)
+admin.site.register(TurfBooking)

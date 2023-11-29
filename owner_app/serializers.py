@@ -41,8 +41,43 @@ class TurfSerializer(serializers.ModelSerializer):
         turf.save()
         return turf
     
-# class TurfBookingSerializer
+    
+    
+class TurfBookingSerializer(serializers.ModelSerializer):
+    balance = serializers.SerializerMethodField()
+    class Meta:
+        model = TurfBooking  
+        fields = "__all__"
+
+    def get_balance(self,object):
+        return object.price - object.amount_paid
     
     
 
+
+class PaymentHistorySerializer(serializers.ModelSerializer):
+    turf = serializers.SerializerMethodField()
+    price = serializers.FloatField(source='turf_booking.price')
+    user_name = serializers.CharField(source='turf_booking.user_name')
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField() 
+    amount_paid = serializers.SerializerMethodField()
+    balance = serializers.SerializerMethodField()
+    class Meta:
+        model = PaymentHistoryModel
+        fields = ['turf','turf_booking', 'price', 'user_name','start_time','end_time','amount_paid', 'balance']
+        
+    def get_turf(self, object):
+        return object.turf.id if object.turf else None
+        
+    def get_start_time(self,object):
+        return object.turf_booking.start_time
     
+    def get_end_time(self,object):
+        return object.turf_booking.end_time
+    
+    def get_amount_paid(self,object):
+        return object.turf_booking.amount_paid
+    
+    def get_balance(self,object):
+        return object.turf_booking.balance

@@ -5,7 +5,7 @@ from user_app.models import *
 # Create your models here.
 class Owner(AbstractUser):
     Organization_name = models.CharField(max_length=20)
-    Phone_number = models.CharField(max_length=10)
+    phone_no = models.CharField(max_length=10)
 
 
 class Amenity(models.Model):
@@ -16,6 +16,7 @@ class Amenity(models.Model):
         return self.name
     
 class Turf(models.Model):
+    owner = models.ForeignKey(Owner, on_delete=models.CASCADE)
     name = models.CharField(max_length=55)
     location = models.CharField(max_length=55)
     price = models.DecimalField(max_digits=10, decimal_places=2)

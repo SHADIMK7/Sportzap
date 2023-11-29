@@ -34,3 +34,7 @@ class BookingView(generics.ListCreateAPIView):
     queryset = TurfBooking.objects.all()
     serializer_class = BookingSerializer
     
+
+class TurfDisplayView(generics.ListAPIView):
+    queryset = Turf.objects.all()
+    serializer_class = TurfDisplaySerializer

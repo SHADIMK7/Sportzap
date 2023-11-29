@@ -21,3 +21,8 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = TurfBooking
         fields = '__all__'
+        
+class TurfDisplaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Turf
+        fields = '__all__'

@@ -5,7 +5,7 @@ from . models import *
 class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Owner
-        fields = ['Organization_name', 'username', 'email', 'password', 'Phone_number']
+        fields = ['Organization_name', 'username', 'email', 'password', 'phone_no']
         extra_kwargs = {
             'email': {'required': True, 'validators': []},
         }
@@ -15,7 +15,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
             Organization_name=self.validated_data['Organization_name'],
             username=self.validated_data['username'],
             email=self.validated_data['email'],
-            Phone_number=self.validated_data['Phone_number'],
+            phone_no=self.validated_data['phone_no'],
         )
         account.set_password(self.validated_data['password'])
         account.save()
@@ -40,3 +40,7 @@ class TurfSerializer(serializers.ModelSerializer):
         )
         turf.save()
         return turf
+    
+    
+
+    

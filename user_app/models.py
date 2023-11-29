@@ -4,6 +4,8 @@ from Backend import settings
 from owner_app.models import *
 from django.contrib.auth.models import AbstractUser,Group,Permission
 
+# from owner_app.models import Turf
+
 # Create your models here.
 class Customer(AbstractUser):
     customer_mobile = models.CharField(max_length=10)

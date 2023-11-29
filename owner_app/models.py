@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser,Group,Permission
 
 # Create your models here.
 class Owner(AbstractUser):
@@ -25,4 +25,3 @@ class Turf(models.Model):
 
     def _str_(self):
         return self.name
-

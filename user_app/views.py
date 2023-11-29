@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, status
 from . models import *
 from . serializers import *
+from owner_app.models import *
 from rest_framework.response import Response
 
 # Create your views here.
@@ -32,3 +33,4 @@ class CustomerRegistrationView(generics.CreateAPIView, generics.ListAPIView):
 class BookingView(generics.ListCreateAPIView):
     queryset = TurfBooking.objects.all()
     serializer_class = BookingSerializer
+    

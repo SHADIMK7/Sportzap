@@ -7,11 +7,12 @@ from rest_framework import status
 from admin_app.serializers import IncomeSerializer
 from rest_framework import generics,mixins
 from user_app.serializers import RegisterUserSerializer,BookingSerializer
-from user_app.models import Customer,TurfBooking
+from user_app.models import Customer
 from admin_app.serializers import TurfUpdateSerializer,CustomerListSerializer
 from django.http import Http404
 from datetime import datetime, timedelta
 from django.db.models import Sum
+from owner_app.models import TurfBooking
 
 
 # Create your views here.

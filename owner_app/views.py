@@ -27,12 +27,14 @@ class Registration(generics.CreateAPIView):
             token, create = Token.objects.get_or_create(user=account)
             token_key = token.key
             print('token ', token)
+            print('name is ',account.username )
+            print('email ', account.email)
             data ={
                 "message":"Account Created Successfully",
                 "Organization_name":account.Organization_name,
                 "username":account.username,
                 "email":account.email,
-                "Phone number":account.phone_no,
+                "Phone number":account.phone_no,    
                 "token":token_key
             }   
         else:
@@ -71,6 +73,19 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
         return Response({'status':"Destroyed",'message': "Turf has been deleted successfully",'response_code': status.HTTP_204_NO_CONTENT,})    
     
     
+class TurfBookingView(generics.ListCreateAPIView):
+    queryset = TurfBooking.objects.all()
+    serializer_class = TurfBookingSerializer
+
+
+    
+class PaymentHistory(generics.ListCreateAPIView):
+    # queryset = PaymentHistoryModel.objects.all()
+    serializer_class = PaymentHistorySerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return PaymentHistoryModel.objects.filter(turf__pk=pk)
     
 # class PaymentHistory(generics.ListCreateAPIView):
 #     queryset = PaymentHistory.objects.all()

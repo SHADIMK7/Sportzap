@@ -69,4 +69,6 @@ class MatchModel(models.Model):
 class MatchRatingModel(models.Model):
     match = models.ForeignKey(MatchModel, on_delete=models.CASCADE)
     turf = models.ForeignKey(Turf, on_delete=models.CASCADE)
+    team1_score = models.IntegerField(default=0)
+    team2_score = models.IntegerField(default=0)
     remark = models.CharField(max_length=50, null=True)

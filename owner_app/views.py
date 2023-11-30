@@ -82,6 +82,12 @@ class PaymentHistory(generics.ListCreateAPIView):
         pk = self.kwargs['pk']
         return PaymentHistoryModel.objects.filter(turf__pk=pk)
     
+
+class MatchRating(generics.ListCreateAPIView):
+    queryset = MatchRatingModel.objects.all()
+    serializer_class = MatchRatingSerializer
+    
+    
 # class PaymentHistory(generics.ListCreateAPIView):
 #     queryset = PaymentHistory.objects.all()
 #     serializer_class = PaymentHistorySerializer

@@ -72,5 +72,26 @@ class PaymentHistorySerializer(serializers.ModelSerializer):
         return object.turf_booking.balance
 
 
-# class MatchRatingSerializer(serializers.ModelSerializer):
-#     model = 
+class MatchRatingSerializer(serializers.ModelSerializer):
+    team1 = serializers.SerializerMethodField()
+    team1_score = serializers.SerializerMethodField()
+    team2 = serializers.SerializerMethodField()
+    team2_score = serializers.SerializerMethodField()
+    date_played = serializers.SerializerMethodField()
+    model = MatchRatingModel
+    fields = ['match', 'turf', 'remark', 'team1', 'team2', 'team1_score', 'team2_score', 'date_played'] 
+    
+    def get_team1(self, object):
+        return object.match.team1
+    
+    def get_team2(self, object):
+        return object.match.team2
+    
+    def get_team1_score(self,object):
+        return object.match.team1
+    
+    def get_team2_score(self,object):
+        return object.match.team2
+    
+    def get_date_played(self,object):
+        return object.match.date_played

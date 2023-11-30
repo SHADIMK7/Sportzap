@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser,Group,Permission
 from user_app.models import *
-from user_app.models import Customer
+from user_app.models import Customer, Team
 
 # Create your models here.
 class Owner(AbstractUser):
@@ -53,3 +53,20 @@ class PaymentHistoryModel(models.Model):
     turf_booking = models.ForeignKey(TurfBooking, on_delete=models.SET_NULL, null=True)
     turf = models.ForeignKey(Turf, on_delete=models.SET_NULL, null=True)
     user = models.ForeignKey(Customer,on_delete=models.SET_NULL, null=True)
+    
+    def __str__(self):
+        return self.user.username + "has booked " + self.turf.name 
+
+
+class MatchModel(models.Model):
+    team1 = models.ForeignKey(Team, related_name='team1', on_delete=models.CASCADE)
+    team2 = models.ForeignKey(Team, related_name='team2', on_delete=models.CASCADE)
+    team1_score = models.IntegerField(default=0)
+    team2_score = models.IntegerField(default=0)
+    date_played = models.DateField()
+
+
+class MatchRatingModel(models.Model):
+    match = models.ForeignKey(MatchModel, on_delete=models.CASCADE)
+    turf = models.ForeignKey(Turf, on_delete=models.CASCADE)
+    remark = models.CharField(max_length=50, null=True)

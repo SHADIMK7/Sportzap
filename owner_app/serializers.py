@@ -70,3 +70,7 @@ class PaymentHistorySerializer(serializers.ModelSerializer):
     
     def get_balance(self,object):
         return object.turf_booking.balance
+
+
+# class MatchRatingSerializer(serializers.ModelSerializer):
+#     model = 

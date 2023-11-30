@@ -58,4 +58,36 @@ class TurfDisplayView(generics.ListAPIView):
 class TeamView(generics.ListCreateAPIView):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
+    
+class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
+    # lookup_field = "name"
+    
+    def get(self, request, name):
+        self.queryset = self.queryset.filter(team_name = name).first()
+        if self.queryset:
+            serializer = self.get_serializer(self.queryset)
+            return Response({'data': serializer.data})
+        else:
+            return Response({'error': 'not found'}, status=status.HTTP_403_FORBIDDEN)
+        
+    def put(self, request, name):
+        self.queryset = self.queryset.filter(team_name = name).first()
+        serializer = self.get_serializer(self.queryset, data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'status': "success", 'message': "updated successfully", 'response_code': status.HTTP_200_OK, 'data': serializer.data})
+        else:
+            return Response({'error': 'not updated'}, status=status.HTTP_403_FORBIDDEN)
+        
+    def delete(self, request, name):
+        self.queryset = self.queryset.filter(team_name = name).first()
+        self.perform_destroy(self.queryset)
+        return Response({'status': "success", 'message': "deleted successfully", 'response_code': status.HTTP_204_NO_CONTENT})
+    
+class PlayerView(generics.ListCreateAPIView):
+    queryset = Player.objects.all()
+    serializer_class = PlayerSerializer
 
+#HIII

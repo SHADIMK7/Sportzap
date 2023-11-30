@@ -3,14 +3,15 @@ from owner_app.models import *
 from user_app.models import *
 
 
+
 class CustomerListSerializer(serializers.ModelSerializer):
     booking_count = serializers.SerializerMethodField()
     class Meta:
         model= Customer
-        fields=['username', 'email', 'password', 'customer_mobile','booking_count']
+        fields=['id','username', 'email', 'password', 'customer_mobile','booking_count']
     def get_booking_count(self, customer):
-        bookings_count = TurfBooking.objects.filter(user=customer).count()
-        return bookings_count
+        booking_count = TurfBooking.objects.filter(user=customer).count()
+        return booking_count
     
 class RegistrationSerializer(serializers.ModelSerializer):
     

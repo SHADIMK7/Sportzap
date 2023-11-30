@@ -5,7 +5,7 @@ from owner_app . models import *
 class RegisterUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
-        fields = ['username', 'email', 'password', 'customer_mobile']
+        fields = ['username', 'email', 'password', 'customer_mobile', 'customer_latitude', 'customer_longitude']
     
     def create(self, validated_data):
         account = Customer(
@@ -31,7 +31,15 @@ class TurfDisplaySerializer(serializers.ModelSerializer):
         model = Turf
         fields = '__all__'
         
-class TeamSerializer(serializers.Serializer):
+class PlayerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Player
+        fields = '__all__'
+        
+class TeamSerializer(serializers.ModelSerializer):
+    players = PlayerSerializer(many=True, read_only=True)
+    
     class Meta:
         model = Team
         fields = '__all__'
+        

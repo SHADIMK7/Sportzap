@@ -9,8 +9,8 @@ from django.contrib.auth.models import AbstractUser,Group,Permission
 # Create your models here.
 class Customer(AbstractUser):
     customer_mobile = models.CharField(max_length=10)
-    groups = models.ManyToManyField(Group, related_name='customer_groups', null=True)
-    user_permissions = models.ManyToManyField(Permission, related_name='customer_user_permissions', null=True)
+    groups = models.ManyToManyField('auth.Group')
+    user_permissions = models.ManyToManyField('auth.Permission')
     
     def __str__(self):
         return self.username

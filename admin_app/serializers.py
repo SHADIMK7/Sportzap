@@ -14,9 +14,9 @@ class CustomerListSerializer(serializers.ModelSerializer):
     
 
 
-class IncomeSerializer(serializers.Serializer):
-    monthly_income = serializers.DecimalField(max_digits=10, decimal_places=2)
-    total_income = serializers.DecimalField(max_digits=10, decimal_places=2)
+# class IncomeSerializer(serializers.Serializer):
+#     monthly_income = serializers.DecimalField(max_digits=10, decimal_places=2)
+#     total_income = serializers.DecimalField(max_digits=10, decimal_places=2)
 
     
 class TurfUpdateSerializer(serializers.Serializer):

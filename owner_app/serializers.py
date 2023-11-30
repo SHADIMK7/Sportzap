@@ -42,17 +42,6 @@ class TurfSerializer(serializers.ModelSerializer):
         return turf
     
     
-    
-class TurfBookingSerializer(serializers.ModelSerializer):
-    balance = serializers.SerializerMethodField()
-    class Meta:
-        model = TurfBooking  
-        fields = "__all__"
-
-    def get_balance(self,object):
-        return object.price - object.amount_paid
-    
-    
 
 
 class PaymentHistorySerializer(serializers.ModelSerializer):

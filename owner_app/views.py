@@ -71,11 +71,6 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
         instance = self.get_object() 
         self.perform_destroy(instance)
         return Response({'status':"Destroyed",'message': "Turf has been deleted successfully",'response_code': status.HTTP_204_NO_CONTENT,})    
-    
-    
-class TurfBookingView(generics.ListCreateAPIView):
-    queryset = TurfBooking.objects.all()
-    serializer_class = TurfBookingSerializer
 
 
     

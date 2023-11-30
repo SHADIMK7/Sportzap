@@ -4,6 +4,7 @@ from . models import *
 from . serializers import *
 from owner_app.models import *
 from rest_framework.response import Response
+from geopy.distance import distance
 
 # Create your views here.
 class CustomerRegistrationView(generics.CreateAPIView, generics.ListAPIView):
@@ -32,5 +33,29 @@ class CustomerRegistrationView(generics.CreateAPIView, generics.ListAPIView):
         
 class BookingView(generics.ListCreateAPIView):
     queryset = TurfBooking.objects.all()
-    serializer_class = BookingSerializer
+    serializer_class = TurfBookingSerializer
     
+
+class TurfDisplayView(generics.ListAPIView):
+    queryset = Turf.objects.all()
+    serializer_class = TurfDisplaySerializer
+    
+    def get_queryset(self):
+        # Get the user's location from the request, you may need to customize this based on your application
+        user_latitude = float(self.request.query_params.get('latitude', 0))
+        user_longitude = float(self.request.query_params.get('longitude', 0))
+
+        user_location = (user_latitude, user_longitude)
+
+        # Calculate distances and order by them
+        turfs = Turf.objects.all()
+        turfs_with_distance = sorted(
+            turfs,
+            key=lambda turf: distance(user_location, (turf.latitude, turf.longitude)).miles
+        )
+        return turfs_with_distance
+    
+class TeamView(generics.ListCreateAPIView):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
+

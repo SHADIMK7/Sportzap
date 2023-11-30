@@ -89,3 +89,5 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
 class PlayerView(generics.ListCreateAPIView):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
+
+#HIII

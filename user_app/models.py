@@ -16,19 +16,22 @@ class Customer(AbstractUser):
     def __str__(self):
         return self.username
     
-class Player(models.Model):
-    player_name = models.CharField(max_length=55)
-    player_photo = models.ImageField(upload_to='player_image/')
-    player_position = models.CharField(max_length=10)
-    
 class Team(models.Model):
-    player = models.ManyToManyField(Player)
     team_name = models.CharField(max_length=55)
+    team_pic = models.ImageField(upload_to='team_image/')
     team_strength = models.IntegerField()
     team_longitude = models.FloatField()
     team_latitude = models.FloatField()
     
-
+    def __str__(self):
+        return self.team_name
     
+class Player(models.Model):
+    player_name = models.CharField(max_length=55)
+    player_pic = models.ImageField(upload_to='player_image/')
+    player_position = models.CharField(max_length=10)
+    team = models.ForeignKey('Team', related_name='players', on_delete=models.SET_NULL, null=True)
     
+    def __str__(self):
+        return self.player_name
     

@@ -17,12 +17,21 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         account.save()
         return account
     
-class BookingSerializer(serializers.ModelSerializer):
+class TurfBookingSerializer(serializers.ModelSerializer):
+    balance = serializers.SerializerMethodField()
     class Meta:
-        model = TurfBooking
-        fields = '__all__'
+        model = TurfBooking  
+        fields = "__all__"
+
+    def get_balance(self,object):
+        return object.price - object.amount_paid
         
 class TurfDisplaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Turf
+        fields = '__all__'
+        
+class TeamSerializer(serializers.Serializer):
+    class Meta:
+        model = Team
         fields = '__all__'

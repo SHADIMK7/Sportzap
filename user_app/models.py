@@ -8,11 +8,8 @@ from django.contrib.auth.models import AbstractUser
 # Create your models here.
 class Customer(AbstractUser):
     customer_mobile = models.CharField(max_length=10)
-<<<<<<< HEAD
-=======
     customer_latitude = models.FloatField()
     customer_longitude = models.FloatField()
->>>>>>> 1d90408afba53a3c13e8c0b9dca6ec00598f651c
     groups = models.ManyToManyField('auth.Group')
     user_permissions = models.ManyToManyField('auth.Permission')
     

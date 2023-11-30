@@ -24,7 +24,7 @@ class Turf(models.Model):
     image = models.ImageField(upload_to='image/') 
     description = models.CharField(max_length=255)
     amenity = models.ManyToManyField(Amenity)
-    is_active = models.BooleanField(default=False)
+    # is_active = models.BooleanField(default=False)
 
     def _str_(self):
         return self.name

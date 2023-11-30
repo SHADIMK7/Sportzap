@@ -1,13 +1,11 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from owner_app.models import Owner,Turf
-from owner_app.serializers import RegistrationSerializer,TurfSerializer,TurfBookingSerializer 
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework import generics,mixins
-from user_app.serializers import RegisterUserSerializer
 from user_app.models import Customer
-from admin_app.serializers import TurfUpdateSerializer,CustomerListSerializer
+from admin_app.serializers import TurfUpdateSerializer,CustomerListSerializer,RegistrationSerializer,TurfSerializer,BookingSerializer
 from django.http import Http404
 from datetime import datetime, timedelta
 from django.db.models import Sum
@@ -23,9 +21,10 @@ class OwnerList(APIView):
     
     
 class OwnerDelete(APIView):
-    def delete(self,request,username):
+    def delete(self,request,pk):
         try:
-            stream=Owner.objects.get(username=username)
+
+            stream=Owner.objects.get(pk=pk)
             stream.delete()
             return Response({"message": "Deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         except Owner.DoesNotExist:
@@ -41,7 +40,6 @@ class TurfList(generics.ListAPIView):
 class TurfActiveDelete(APIView):
     queryset = Turf.objects.all()
     serializer_class = TurfSerializer
-    lookup_field = 'id'
     def get_object(self):
         try:
             return self.queryset.get(pk=self.kwargs[self.lookup_field])
@@ -66,12 +64,18 @@ class TurfActiveDelete(APIView):
 class CustomerList(generics.ListAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerListSerializer
+
+class CustomerListDelete(generics.RetrieveDestroyAPIView):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerListSerializer
+    lookup_field = 'pk'  
     
-# class TurfBookingView(APIView):
-#     def get(self,request):
-#         booking= TurfBooking.objects.all()
-#         serializer= BookingSerializer(booking,many=True)
-#         return Response(serializer.data)
+      
+class TurfBookingView(APIView):
+    def get(self,request):
+        booking= TurfBooking.objects.all()
+        serializer= BookingSerializer(booking,many=True)
+        return Response(serializer.data)
     
 
 # class AdminDataView(APIView):

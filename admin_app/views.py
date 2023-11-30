@@ -5,7 +5,7 @@ from owner_app.serializers import RegistrationSerializer,TurfSerializer,TurfBook
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework import generics,mixins
-from user_app.serializers import RegisterUserSerializer,BookingSerializer
+from user_app.serializers import RegisterUserSerializer
 from user_app.models import Customer
 from admin_app.serializers import TurfUpdateSerializer,CustomerListSerializer
 from django.http import Http404
@@ -67,11 +67,11 @@ class CustomerList(generics.ListAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerListSerializer
     
-class TurfBookingView(APIView):
-    def get(self,request):
-        booking= TurfBooking.objects.all()
-        serializer= BookingSerializer(booking,many=True)
-        return Response(serializer.data)
+# class TurfBookingView(APIView):
+#     def get(self,request):
+#         booking= TurfBooking.objects.all()
+#         serializer= BookingSerializer(booking,many=True)
+#         return Response(serializer.data)
     
 
 # class AdminDataView(APIView):

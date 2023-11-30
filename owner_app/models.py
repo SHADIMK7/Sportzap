@@ -43,7 +43,7 @@ class TurfBooking(models.Model):
     price = models.FloatField()
     Payment_type = models.CharField(choices=PAYMENT_CHOICES, default='Partial_payment', max_length=30)
     amount_paid = models.IntegerField(default=300, null=True)
-    balance = models.IntegerField(null=True)      
+    balance = models.IntegerField()      
     turf = models.ForeignKey(Turf, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):

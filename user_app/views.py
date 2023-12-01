@@ -41,13 +41,11 @@ class TurfDisplayView(generics.ListAPIView):
     serializer_class = TurfDisplaySerializer
     
     def get_queryset(self):
-        # Get the user's location from the request, you may need to customize this based on your application
         user_latitude = float(self.request.query_params.get('latitude', 0))
         user_longitude = float(self.request.query_params.get('longitude', 0))
 
         user_location = (user_latitude, user_longitude)
 
-        # Calculate distances and order by them
         turfs = Turf.objects.all()
         turfs_with_distance = sorted(
             turfs,
@@ -62,10 +60,10 @@ class TeamView(generics.ListCreateAPIView):
 class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
-    # lookup_field = "name"
+    # lookup_field = "id"
     
     def get(self, request, name):
-        self.queryset = self.queryset.filter(team_name = name).first()
+        self.queryset = self.queryset.filter(id = name).first()
         if self.queryset:
             serializer = self.get_serializer(self.queryset)
             return Response({'data': serializer.data})
@@ -73,21 +71,68 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
             return Response({'error': 'not found'}, status=status.HTTP_403_FORBIDDEN)
         
     def put(self, request, name):
-        self.queryset = self.queryset.filter(team_name = name).first()
+        self.queryset = self.queryset.filter(id = name).first()
         serializer = self.get_serializer(self.queryset, data = request.data)
+        print('HI')
         if serializer.is_valid():
+            print('HI ENTERED')
             serializer.save()
-            return Response({'status': "success", 'message': "updated successfully", 'response_code': status.HTTP_200_OK, 'data': serializer.data})
+            return Response({'status': "success",
+                             'message': "updated successfully",
+                             'response_code': status.HTTP_200_OK,
+                             'data': serializer.data})
         else:
-            return Response({'error': 'not updated'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'not updated'},
+                            status=status.HTTP_403_FORBIDDEN)
+            
+    def patch(self, request, name):
+        self.queryset = self.queryset.filter(id = name).first()
+        serializer = self.get_serializer(self.queryset, data = request.data, partial=True)
+        print('HI')
+        if serializer.is_valid():
+            print('HI ENTERED')
+            serializer.save()
+            return Response({'status': "success",
+                             'message': "updated successfully",
+                             'response_code': status.HTTP_200_OK,
+                             'data': serializer.data})
+        else:
+            return Response({'error': 'not updated'},
+                            status=status.HTTP_403_FORBIDDEN)
         
     def delete(self, request, name):
-        self.queryset = self.queryset.filter(team_name = name).first()
+        self.queryset = self.queryset.filter(id = name).first()
         self.perform_destroy(self.queryset)
         return Response({'status': "success", 'message': "deleted successfully", 'response_code': status.HTTP_204_NO_CONTENT})
     
 class PlayerView(generics.ListCreateAPIView):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
-
-#HIII
+    
+class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Player.objects.all()
+    serializer_class = PlayerSerializer
+    lookup_field = "name"
+    
+#     def get(self, request, name):
+#         self.queryset = self.queryset.filter(player_name = name).first()
+#         if self.queryset:
+#             serializer = self.get_serializer(self.queryset)
+#             return Response({'data': serializer.data})
+#         else:
+#             return Response({'error': 'not found'}, status=status.HTTP_403_FORBIDDEN)
+        
+#     def put(self, request, name):
+#         self.queryset = self.queryset.filter(player_name = name).first()
+#         serializer = self.get_serializer(self.queryset, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({'status': "success", 'message': "updated successfully", 'response_code': status.HTTP_200_OK, 'data': serializer.data})
+#         else:
+#             return Response({'error': 'not updated'}, status=status.HTTP_403_FORBIDDEN)
+            
+        
+#     def delete(self,request,name):
+#         self.queryset = self.queryset.filter(player_name = name).first()
+#         self.perform_destroy(self.queryset)
+#         return Response({'status': "success", 'message': "deleted successfully", 'response_code': status.HTTP_204_NO_CONTENT})

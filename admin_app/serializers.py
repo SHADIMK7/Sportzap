@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from owner_app.models import *
 from user_app.models import *
-
+# from admin_app.serializers import TurfSerializer
 
 
 class CustomerListSerializer(serializers.ModelSerializer):
@@ -13,12 +13,6 @@ class CustomerListSerializer(serializers.ModelSerializer):
         booking_count = TurfBooking.objects.filter(user=customer).count()
         return booking_count
     
-class OwnerSerializer(serializers.ModelSerializer):
-    # turf = serializers.StringRelatedField()
-
-    class Meta:
-        model = Owner
-        fields= ['id','Organization_name', 'username', 'email', 'password', 'phone_no']
 
 
 class TurfSerializer(serializers.ModelSerializer):
@@ -27,6 +21,18 @@ class TurfSerializer(serializers.ModelSerializer):
     class Meta:
         model = Turf
         fields='__all__'
+
+
+class OwnerSerializer(serializers.ModelSerializer):
+    turf = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Owner
+        fields= ['id','Organization_name', 'username', 'email', 'password', 'phone_no','turf']
+    def get_turf(self, owner):
+        turfs = owner.turf_set.all()
+        turf_serializer = TurfSerializer(turfs, many=True)
+        return turf_serializer.data
 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:

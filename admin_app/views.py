@@ -77,7 +77,6 @@ class CustomerList(generics.ListAPIView):
 class CustomerListDelete(generics.RetrieveDestroyAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerListSerializer
-    lookup_field = 'id'  
     
       
 class TurfBookingView(APIView):
@@ -85,8 +84,19 @@ class TurfBookingView(APIView):
         booking= TurfBooking.objects.all()
         serializer= BookingSerializer(booking,many=True)
         return Response(serializer.data)
+
+class TurfBookingCancel(mixins.RetrieveModelMixin,mixins.DestroyModelMixin,generics.GenericAPIView):
+    queryset = TurfBooking.objects.all()
+    serializer_class = BookingSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
     
 
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+   
 # class AdminDataView(APIView):
 #     def get(self, request):
 #             reversed_court = TurfBooking.objects.all().order_by('-id')

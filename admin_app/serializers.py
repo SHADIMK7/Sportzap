@@ -13,11 +13,13 @@ class CustomerListSerializer(serializers.ModelSerializer):
         booking_count = TurfBooking.objects.filter(user=customer).count()
         return booking_count
     
-class RegistrationSerializer(serializers.ModelSerializer):
-    
+class OwnerSerializer(serializers.ModelSerializer):
+    # turf = serializers.StringRelatedField()
+
     class Meta:
         model = Owner
         fields= ['id','Organization_name', 'username', 'email', 'password', 'phone_no']
+
 
 class TurfSerializer(serializers.ModelSerializer):
     amenity = serializers.PrimaryKeyRelatedField(queryset = Amenity.objects.all(), many=True)

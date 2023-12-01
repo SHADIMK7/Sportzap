@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework import generics,mixins
 from user_app.models import Customer
-from admin_app.serializers import TurfUpdateSerializer,CustomerListSerializer,RegistrationSerializer,TurfSerializer,BookingSerializer
+from admin_app.serializers import TurfUpdateSerializer,CustomerListSerializer,OwnerSerializer,TurfSerializer,BookingSerializer
 from django.http import Http404
 from datetime import datetime, timedelta
 from django.db.models import Sum
@@ -16,7 +16,7 @@ from owner_app.models import TurfBooking
 class OwnerList(APIView):
     def get(self,request):
         owner= Owner.objects.filter(is_staff=False)
-        serializer= RegistrationSerializer(owner,many=True,context={'request': request})
+        serializer= OwnerSerializer(owner,many=True,context={'request': request})
         return Response(serializer.data)
     
     
@@ -60,6 +60,15 @@ class TurfActiveDelete(APIView):
         serializer = self.serializer_class(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    # def put(self,request,pk):
+    #     stream=StreamField.objects.get(pk=pk)
+    #     serializer=StreamFieldSerializer(stream,data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data)
+    #     else:
+    #         return Response(serializer.errors)
+        
 
 class CustomerList(generics.ListAPIView):
     queryset = Customer.objects.all()
@@ -68,7 +77,7 @@ class CustomerList(generics.ListAPIView):
 class CustomerListDelete(generics.RetrieveDestroyAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerListSerializer
-    lookup_field = 'pk'  
+    lookup_field = 'id'  
     
       
 class TurfBookingView(APIView):

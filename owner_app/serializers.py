@@ -72,5 +72,8 @@ class PaymentHistorySerializer(serializers.ModelSerializer):
         return object.turf_booking.balance
 
 
-# class MatchRatingSerializer(serializers.ModelSerializer):
-#     model = 
+class MatchRatingSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = MatchRatingModel
+        fields = ['team1','team2','team1_score', 'team2_score', 'date_played','turf','remark'] 

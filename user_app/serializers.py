@@ -31,14 +31,14 @@ class TurfDisplaySerializer(serializers.ModelSerializer):
         model = Turf
         fields = '__all__'
         
-    def update(self, instance, validated_data):
-        instance.team_name = validated_data.get('team_name', instance.team_name)
-        instance.team_pic = validated_data.get('team_pic', instance.team_pic)
-        instance.team_strength = validated_data.get('team_strength', instance.team_strength)
-        instance.team_longitude = validated_data.get('team_longitude', instance.team_longitude)
-        instance.team_latitude = validated_data.get('team_latitude', instance.team_latitude)
-        instance.save()
-        return instance
+    # def update(self, instance, validated_data):
+    #     instance.team_name = validated_data.get('team_name', instance.team_name)
+    #     instance.team_pic = validated_data.get('team_pic', instance.team_pic)
+    #     instance.team_strength = validated_data.get('team_strength', instance.team_strength)
+    #     instance.team_longitude = validated_data.get('team_longitude', instance.team_longitude)
+    #     instance.team_latitude = validated_data.get('team_latitude', instance.team_latitude)
+    #     instance.save()
+    #     return instance
         
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:

@@ -39,9 +39,24 @@ class BookingSerializer(serializers.ModelSerializer):
         model = TurfBooking
         fields = '__all__'
 
-# class IncomeSerializer(serializers.Serializer):
-#     monthly_income = serializers.DecimalField(max_digits=10, decimal_places=2)
-#     total_income = serializers.DecimalField(max_digits=10, decimal_places=2)
+class TransactionHistorySerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(source='user.first_name')
+    turf = serializers.StringRelatedField(source='turf.name')
+    price = serializers.StringRelatedField(source="turf_booking.price")
+    amount_paid = serializers.StringRelatedField(source="turf_booking.amount_paid" )
+    balance = serializers.StringRelatedField(source = "turf_booking.balance")
+    class Meta:
+        model = PaymentHistoryModel
+        fields = ['id', 'turf_booking', 'turf', 'user','amount_paid','price','balance'] 
+
+
+class IncomeSerializer(serializers.Serializer):
+
+    monthly_income = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_income = serializers.DecimalField(max_digits=10, decimal_places=2)
+    monthly_balance_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    yearly_balance_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+   
 
     
 class TurfUpdateSerializer(serializers.Serializer):

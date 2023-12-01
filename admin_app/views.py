@@ -5,11 +5,11 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework import generics,mixins
 from user_app.models import Customer
-from admin_app.serializers import TurfUpdateSerializer,CustomerListSerializer,OwnerSerializer,TurfSerializer,BookingSerializer
+from admin_app.serializers import TransactionHistorySerializer,TurfUpdateSerializer,CustomerListSerializer,OwnerSerializer,TurfSerializer,BookingSerializer,IncomeSerializer
 from django.http import Http404
 from datetime import datetime, timedelta
 from django.db.models import Sum
-from owner_app.models import TurfBooking
+from owner_app.models import TurfBooking,PaymentHistoryModel
 
 
 # Create your views here.
@@ -96,34 +96,40 @@ class TurfBookingCancel(mixins.RetrieveModelMixin,mixins.DestroyModelMixin,gener
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
-   
-# class AdminDataView(APIView):
-#     def get(self, request):
-#             reversed_court = TurfBooking.objects.all().order_by('-id')
-#             current_date = datetime.now()
-            
-#             first_day = current_date.replace(day=1)
-#             last_day = (current_date.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-#             income = TurfBooking.objects.filter(
-#                 date__range=[first_day, last_day], payment_status='SUCCESS'
-#             ).aggregate(total=Sum('price'))['total'] or 0
-            
-#             year_first_day = current_date.replace(month=1, day=1)
-#             year_last_day = current_date.replace(month=12, day=31)
-            
-#             yearly_income = TurfBooking.objects.filter(
-#                 date__range=[year_first_day, year_last_day], payment_status='SUCCESS'
-#             ).aggregate(total=Sum('price'))['total'] or 0 
-            
-#             reversed_court_status = TurfBooking.objects.filter(payment_status='SUCCESS').order_by('-id')
-            
-#             data = {
-#                 'income': income,
-#                 'court': reversed_court,
-#                 'yearly_income': yearly_income,
-#                 'court_status': reversed_court_status.values()  # Convert to list of dicts
-#             }
-            
-#             return Response(data)
-        
- 
+
+
+class TransactionHistory(mixins.ListModelMixin,generics.GenericAPIView):
+    queryset = PaymentHistoryModel.objects.all()
+    serializer_class = TransactionHistorySerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+
+class AdminIncomeView(APIView):
+    def get(self, request):
+        # Calculate monthly income
+        current_date = datetime.now()
+        first_day = current_date.replace(day=1)
+        last_day = (current_date.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        monthly_income = TurfBooking.objects.filter(
+            date__range=[first_day, last_day]).aggregate(total=Sum('amount_paid'))['total'] or 0
+        monthly_balance_amount = TurfBooking.objects.filter(
+            date__range=[first_day, last_day]).aggregate(total=Sum('balance'))['total'] or 0
+
+        # Calculate yearly income
+        year_first_day = current_date.replace(month=1, day=1)
+        year_last_day = current_date.replace(month=12, day=31)
+        yearly_income = TurfBooking.objects.filter(
+            date__range=[year_first_day, year_last_day]).aggregate(total=Sum('amount_paid'))['total'] or 0
+        yearly_balance_amount = TurfBooking.objects.filter(
+            date__range=[first_day, last_day]).aggregate(total=Sum('balance'))['total'] or 0
+
+        serializer = IncomeSerializer({
+            'monthly_income': monthly_income,
+            'total_income': yearly_income,
+            'monthly_balance_amount':monthly_balance_amount,
+            'yearly_balance_amount':yearly_balance_amount
+        })
+        return Response(serializer.data)

@@ -2,7 +2,7 @@ from datetime import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from user_app.models import *
-from user_app.models import Customer, Team
+# from user_app.models import Customer, Team
 
 # Create your models here.
 

@@ -2,24 +2,56 @@ from rest_framework import serializers
 from . models import *
 
 
-class RegistrationSerializer(serializers.ModelSerializer):
+
+class AbstractSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
     class Meta:
-        model = Owner
-        fields = ['Organization_name', 'username', 'email', 'password', 'phone_no']
+        model = Abstract
+        fields  = ['username', 'email', 'password' , 'phone_no', 'latitude', 'longitude', 'usertype']
         extra_kwargs = {
             'email': {'required': True, 'validators': []},
         }
+        
+        def create(self, validated_data):
+            abstract = Abstract.objects.create(validated_data)
+            abstract.set_password(validated_data['password'])
+            abstract.save()
+            return abstract
 
-    def save(self):
-        account = Owner(
-            Organization_name=self.validated_data['Organization_name'],
-            username=self.validated_data['username'],
-            email=self.validated_data['email'],
-            phone_no=self.validated_data['phone_no'],
-        )
-        account.set_password(self.validated_data['password'])
-        account.save()
-        return account
+class RegistrationSerializer(serializers.ModelSerializer):
+    abstract = AbstractSerializer()
+        
+    class Meta:
+        model = Owner
+        fields = ['abstract','Organization_name']
+    
+    def validate_abstract(self, abstract_data):
+        usertype = abstract_data.get('usertype')
+        if usertype != 'owner':
+            raise serializers.ValidationError({'usertype': 'Please use customer registration for registering customer. This registration is exclusively for TURF OWNERS'})
+        return abstract_data
+        
+    def create(self, validated_data):
+        abstract_data = validated_data.pop('abstract')
+        password = abstract_data.get('password')
+        abstract = AbstractSerializer(data=abstract_data)
+        if abstract.is_valid():
+            
+            email = abstract_data.get('email')
+            if Abstract.objects.filter(email=email).exists():
+                raise serializers.ValidationError({'abstract': {'email': 'This email is already registered.'}})
+            
+            phone_no = abstract_data.get('phone_no')
+            if Abstract.objects.filter(phone_no=phone_no).exists():
+                raise serializers.ValidationError({'abstract': {'email': 'This phone no is already registered. '}})
+            
+            abstract = abstract.save()
+            abstract.set_password(password)
+            abstract.save()
+            account = Owner.objects.create(abstract=abstract, **validated_data)
+            return account
+        else:
+            raise serializers.ValidationError({"abstract": abstract.errors})
 
 
 class TurfSerializer(serializers.ModelSerializer):

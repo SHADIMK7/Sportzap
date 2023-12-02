@@ -58,7 +58,13 @@ class IncomeSerializer(serializers.Serializer):
     yearly_balance_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
    
 
-    
+# class AdminIncomeSerializer(serializers.Serializer):
+#     amount_credited = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+class AdminIncomeSerializer(serializers.Serializer):
+    bookings = serializers.ListField(child=serializers.DictField())
+
+
 class TurfUpdateSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only='True')
     name = serializers.CharField(read_only='True')

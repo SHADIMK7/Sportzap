@@ -44,33 +44,6 @@ class CustomerRegistrationView(generics.CreateAPIView):
             data = serializer.errors
 
         return Response(data)
-
-# class CustomerRegistrationView(generics.CreateAPIView):
-#     serializer_class = RegisterUserSerializer
-    
-#     def post(self, request): 
-#         data = {}
-#         mobile = request.data.get('phone_no')
-#         if Abstract.objects.filter(phone_no = mobile).first():
-#             return Response({'status': "failed",'message': "Mobile number already exists",'response_code':status.HTTP_400_BAD_REQUEST})
-        
-#         email = request.data.get('email')
-#         if Abstract.objects.filter(email = email).first():
-#             return Response({'status': "failed",'message': "Email already exists",'response_code':status.HTTP_400_BAD_REQUEST})
-        
-#         serializer = self.serializer_class(data=request.data)
-#         if serializer.is_valid():
-#             account = serializer.save()
-#             token, create = Token.objects.get_or_create(user = account)
-#             token_key = token.key
-#             data = {
-#                 "message" : "Account created successfully",
-#                 "username" : account.username,
-#                 "token": token_key
-#             }
-#             return Response(data, status=status.HTTP_201_CREATED)
-#         else:
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 class BookingView(generics.ListCreateAPIView):
     queryset = TurfBooking.objects.all()
@@ -109,7 +82,8 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
             serializer = self.get_serializer(self.queryset)
             return Response({'data': serializer.data})
         else:
-            return Response({'error': 'not found'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'not found'}, 
+                            status=status.HTTP_403_FORBIDDEN)
         
     def put(self, request, name):
         self.queryset = self.queryset.filter(id = name).first()
@@ -129,7 +103,9 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
     def delete(self, request, name):
         self.queryset = self.queryset.filter(id = name).first()
         self.perform_destroy(self.queryset)
-        return Response({'status': "success", 'message': "deleted successfully", 'response_code': status.HTTP_204_NO_CONTENT})
+        return Response({'status': "success",
+                         'message': "deleted successfully",
+                         'response_code': status.HTTP_204_NO_CONTENT})
     
 class PlayerView(generics.ListCreateAPIView):
     queryset = Player.objects.all()
@@ -146,19 +122,27 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
             serializer = self.get_serializer(self.queryset)
             return Response({'data': serializer.data})
         else:
-            return Response({'error': 'not found'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'not found'},
+                            status=status.HTTP_403_FORBIDDEN)
         
     def put(self, request, name):
         self.queryset = self.queryset.filter(player_name = name).first()
         serializer = self.get_serializer(self.queryset, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'status': "success", 'message': "updated successfully", 'response_code': status.HTTP_200_OK, 'data': serializer.data})
+            return Response({'status': "success",
+                             'message': "updated successfully",
+                             'response_code': status.HTTP_200_OK,
+                             'data': serializer.data})
         else:
-            return Response({'error': 'not updated'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'not updated'},
+                            status=status.HTTP_403_FORBIDDEN)
             
         
     def delete(self,request,name):
         self.queryset = self.queryset.filter(player_name = name).first()
         self.perform_destroy(self.queryset)
-        return Response({'status': "success", 'message': "deleted successfully", 'response_code': status.HTTP_204_NO_CONTENT})
+        return Response({'status': "success",
+                         'message': "deleted successfully",
+                         'response_code': status.HTTP_204_NO_CONTENT})
+    

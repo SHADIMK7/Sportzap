@@ -5,7 +5,7 @@ from owner_app . models import *
 class AbstractSerializer(serializers.ModelSerializer):
     class Meta:
         model = Abstract
-        fields  = ['username', 'email', 'password' , 'phone_no', 'latitude', 'longitude']
+        fields  = ['username', 'email', 'password' , 'phone_no']
         extra_kwargs = {
             'email': {'required': True},
         }
@@ -15,8 +15,6 @@ class AbstractSerializer(serializers.ModelSerializer):
                 'username': validated_data['username'],
                 'email': validated_data['email'],
                 'phone_no': validated_data['phone_no'], 
-                'latitude': validated_data.get('latitude'),
-                'longitude': validated_data.get('longitude'),
                 'usertype': 'customer'
             }
             abstract = Abstract.objects.create(**validated_data)

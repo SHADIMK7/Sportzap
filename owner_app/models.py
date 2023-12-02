@@ -1,12 +1,24 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser,Group,Permission
+from django.contrib.auth.models import AbstractUser
 from user_app.models import *
 from user_app.models import Customer, Team
 
 # Create your models here.
-class Owner(AbstractUser):
-    Organization_name = models.CharField(max_length=20)
+
+TYPE_CHOICES = (
+    ('owner' , 'owner'),
+    ('customer' , 'customer')
+)
+
+class Abstract(AbstractUser):
     phone_no = models.CharField(max_length=10)
+    usertype = models.CharField(choices=TYPE_CHOICES, default='customer' ,max_length=30)
+    latitude = models.FloatField(null=True)
+    longitude = models.FloatField(null=True)
+    
+class Owner(models.Model):
+    abstract = models.ForeignKey(Abstract, on_delete=models.CASCADE)
+    Organization_name = models.CharField(max_length=20)
 
 
 class Amenity(models.Model):
@@ -26,8 +38,8 @@ class Turf(models.Model):
     amenity = models.ManyToManyField(Amenity)
     # is_active = models.BooleanField(default=False)
 
-    def _str_(self):
-        return self.name
+    def __str__(self):
+        return f' {self.name} ({self.owner.Organization_name})'  
 
 PAYMENT_CHOICES = (
         ('Partial_payment', 'Partial_payment'),

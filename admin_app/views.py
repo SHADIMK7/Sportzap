@@ -15,10 +15,11 @@ from django.db.models import F, Sum,Count
 
 
 # Create your views here.
+
 class OwnerList(APIView):
-    def get(self,request):
-        owner= Owner.objects.filter(is_staff=False)
-        serializer= OwnerSerializer(owner,many=True,context={'request': request})
+    def get(self, request):
+        owners = Owner.objects.filter(abstract__usertype='owner')
+        serializer = OwnerSerializer(owners, many=True, context={'request': request})
         return Response(serializer.data)
     
     
@@ -170,42 +171,43 @@ class AdminIncomeView(APIView):
 #         return Response(serializer.data)
 
 
-from django.db.models import F, Sum, Count, Case, When, DecimalField, Value
+# from django.db.models import F, Sum, Count, Case, When, DecimalField, Value
 
-class AdminView(APIView):
-    def get(self, request):
-        turf_credits = (
-            TurfBooking.objects.values('turf__name', 'turf__price')
-            .annotate(
-                amount_credited_to_admin=Sum(
-                    Case(
-                        When(Payment_type='Partial_payment', then=F('price') * 0.20),
-                        default=F('price') * 0.80,
-                        output_field=DecimalField()
-                    )
-                ),
-                total_bookings=Count('turf')
-            )
-            .order_by('turf__name')
-        )
+# class AdminView(APIView):
+#     def get(self, request):
+#         turf_credits = (
+#             TurfBooking.objects.values('turf__name', 'turf__price')
+#             .annotate(
+#                 amount_credited_to_admin=Sum(
+#                     Case(
+#                         When(Payment_type='Partial_payment', then=F('price') * 0.20),
+#                         default=F('price') * 0.80,
+#                         output_field=DecimalField()
+#                     )
+#                 ),
+#                 total_bookings=Count('turf')
+#             )
+#             .order_by('turf__name')
+#         )
 
-        credited_amounts = []
-        for turf_credit in turf_credits:
-            remaining_amount = Decimal(turf_credit['turf__price']) - Decimal(turf_credit['amount_credited_to_admin'] or 0)
-            if remaining_amount > 0:
-                amount_credited_to_admin = min(Decimal(turf_credit['turf__price']), remaining_amount)
-                amount_credited_to_turf = Decimal(turf_credit['turf__price']) - amount_credited_to_admin
-            else:
-                amount_credited_to_admin = Decimal(turf_credit['turf__price'])
-                amount_credited_to_turf = 0
+#         credited_amounts = []
+#         for turf_credit in turf_credits:
+#             remaining_amount = Decimal(turf_credit['turf__price']) - Decimal(turf_credit['amount_credited_to_admin'] or 0)
+#             if remaining_amount > 0:
+#                 amount_credited_to_admin = min(Decimal(turf_credit['turf__price']), remaining_amount)
+#                 # amount_credited_to_turf = Decimal(turf_credit['turf__price']) - amount_credited_to_admin
+#                 # amount_credited_to_turf = Decimal(turf_credit['turf__amount_paid']) - amount_credited_to_admin
+#             else:
+#                 amount_credited_to_admin = Decimal(turf_credit['turf__price'])
+#                 amount_credited_to_turf = 0
 
-            credited_amounts.append({
-                'turf_name': turf_credit['turf__name'],
-                'turf_price': turf_credit['turf__price'],
-                'amount_credited_to_admin': amount_credited_to_admin,
-                'total_bookings': turf_credit['total_bookings'],
-                'amount_credited_to_turf': amount_credited_to_turf
-            })
+#             credited_amounts.append({
+#                 'turf_name': turf_credit['turf__name'],
+#                 'turf_price': turf_credit['turf__price'],
+#                 'amount_credited_to_admin': amount_credited_to_admin,
+#                 'total_bookings': turf_credit['total_bookings'],
+#                 'amount_credited_to_turf': amount_credited_to_turf
+#             })
 
-        serializer = AdminIncomeSerializer({'bookings': credited_amounts})
-        return Response(serializer.data)
+#         serializer = AdminIncomeSerializer({'bookings': credited_amounts})
+#         return Response(serializer.data)

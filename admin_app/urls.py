@@ -12,7 +12,6 @@ urlpatterns = [
         # path('admin_view/',AdminDataView.as_view(), name='admin_view'),
         path('customer_list/<int:pk>/',CustomerListDelete.as_view(), name='customer_list'),
         path('booking_list/<int:pk>/',TurfBookingCancel.as_view(), name='booking_list'),
-        path('transaction_list/',TransactionHistory.as_view(), name='transaction_list'),
-        path('admin_view/',AdminView.as_view(),name='admin_view')
+        path('transaction_list/',TransactionHistory.as_view(), name='transaction_list')
 
 ]

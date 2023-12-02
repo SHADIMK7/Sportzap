@@ -28,7 +28,7 @@ class OwnerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Owner
-        fields= ['id','Organization_name', 'username', 'email', 'password', 'phone_no','turf']
+        fields='__all_'
     def get_turf(self, owner):
         turfs = owner.turf_set.all()
         turf_serializer = TurfSerializer(turfs, many=True)
@@ -40,14 +40,28 @@ class BookingSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TransactionHistorySerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(source='user.first_name')
-    turf = serializers.StringRelatedField(source='turf.name')
+    user_name = serializers.StringRelatedField(source='user.first_name')
+    turf_name = serializers.StringRelatedField(source='turf.name')
     price = serializers.StringRelatedField(source="turf_booking.price")
     amount_paid = serializers.StringRelatedField(source="turf_booking.amount_paid" )
     balance = serializers.StringRelatedField(source = "turf_booking.balance")
+    amount_credited_to_admin = serializers.SerializerMethodField()
+    amount_credited_to_turf = serializers.SerializerMethodField()
+
     class Meta:
         model = PaymentHistoryModel
-        fields = ['id', 'turf_booking', 'turf', 'user','amount_paid','price','balance'] 
+        fields = ['id', 'turf_booking', 'turf_name', 'user_name','amount_paid','price','balance','amount_credited_to_admin','amount_credited_to_turf'] 
+
+    def get_amount_credited_to_admin(self, obj):
+        turf_price = obj.turf_booking.price
+        amount_credited_to_admin = turf_price * 0.20
+        return amount_credited_to_admin
+
+    def get_amount_credited_to_turf(self, obj):
+        amount_credited_to_admin = self.get_amount_credited_to_admin(obj)
+        amount_paid_to_turf =obj.turf_booking.amount_paid
+        amount_credited_to_turf =  amount_paid_to_turf - amount_credited_to_admin
+        return amount_credited_to_turf
 
 
 class IncomeSerializer(serializers.Serializer):

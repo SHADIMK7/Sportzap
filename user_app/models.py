@@ -4,15 +4,14 @@ from owner_app.models import *
 from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
-class Customer(AbstractUser):
-    customer_mobile = models.CharField(max_length=10)
-    customer_latitude = models.FloatField(null=True)
-    customer_longitude = models.FloatField(null=True)
-    groups = models.ManyToManyField('auth.Group')
-    user_permissions = models.ManyToManyField('auth.Permission')
+# class Customer(AbstractUser):
+#     customer_mobile = models.CharField(max_length=10)
+#     customer_latitude = models.FloatField(null=True)
+#     customer_longitude = models.FloatField(null=True)
+
     
-    def __str__(self):
-        return self.username
+#     def __str__(self):
+#         return self.username
     
 class Team(models.Model):
     team_name = models.CharField(max_length=55)

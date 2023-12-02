@@ -2,20 +2,49 @@ from rest_framework import serializers
 from . models import *
 from owner_app . models import *
 
+class AbstractSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Abstract
+        fields  = ['username', 'email', 'password' , 'phone_no', 'latitude', 'longitude']
+        extra_kwargs = {
+            'email': {'required': True},
+        }
+        
+        def create(self, validated_data):
+            validated_data = {
+                'username': validated_data['username'],
+                'email': validated_data['email'],
+                'phone_no': validated_data['phone_no'], 
+                'latitude': validated_data.get('latitude'),
+                'longitude': validated_data.get('longitude'),
+                'usertype': 'customer'
+            }
+            abstract = Abstract.objects.create(**validated_data)
+            abstract.set_password(validated_data['password'])
+            abstract.save()
+            return abstract
+
 class RegisterUserSerializer(serializers.ModelSerializer):
+    abstract = AbstractSerializer()
+        
     class Meta:
         model = Customer
-        fields = ['username', 'email', 'password', 'customer_mobile', 'customer_latitude', 'customer_longitude']
-    
+        fields = ['abstract']
+            
     def create(self, validated_data):
-        account = Customer(
-            username = validated_data['username'],
-            email = validated_data['email'],
-            customer_mobile = validated_data['customer_mobile']
-        )
-        account.set_password(validated_data['password'])
-        account.save()
-        return account
+        abstract_data = validated_data.pop('abstract')
+        password = abstract_data.get('password')
+        customer = abstract_data.get('username')
+        abstract = AbstractSerializer(data=abstract_data)
+        if abstract.is_valid():
+            abstract = abstract.save()
+            
+            abstract.set_password(password)
+            abstract.save()
+            account = Customer.objects.create(customer=abstract, **validated_data, customer_name = customer)
+            return account
+        else:
+            raise serializers.ValidationError({"abstract": abstract.errors})
     
 class TurfBookingSerializer(serializers.ModelSerializer):
     balance = serializers.SerializerMethodField()

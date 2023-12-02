@@ -7,7 +7,8 @@ from rest_framework import status
 from admin_app.serializers import IncomeSerializer
 from rest_framework import generics,mixins
 from user_app.serializers import RegisterUserSerializer
-from user_app.models import Customer
+# from user_app.models import Customer
+from owner_app.models import *
 from admin_app.serializers import TurfUpdateSerializer,CustomerListSerializer
 from django.http import Http404
 from datetime import datetime, timedelta

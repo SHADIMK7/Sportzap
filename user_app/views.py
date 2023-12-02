@@ -8,32 +8,69 @@ from geopy.distance import distance
 from rest_framework .authtoken.models import Token
 
 # Create your views here.
-class CustomerRegistrationView(generics.CreateAPIView, generics.ListAPIView):
-    queryset = Customer.objects.all()
+class CustomerRegistrationView(generics.CreateAPIView):
     serializer_class = RegisterUserSerializer
-    
-    def post(self, request): 
-        mobile = request.data.get('customer_mobile')
-        if Customer.objects.filter(customer_mobile = mobile).first():
-            return Response({'status': "failed",'message': "Mobile number already exists",'response_code':status.HTTP_400_BAD_REQUEST})
+
+    def post(self, request):
+        print(request.data)
+        mobile = request.data.get('abstract.phone_no')
+        print(mobile)
+        if Abstract.objects.filter(phone_no = mobile).first():
+            return Response({'status': "failed",
+                             'message': "Mobile number already exists",
+                             'response_code':status.HTTP_400_BAD_REQUEST})
         
-        email = request.data.get('email')
-        if Customer.objects.filter(email = email).first():
-            return Response({'status': "failed",'message': "Email already exists",'response_code':status.HTTP_400_BAD_REQUEST})
+        email = request.data.get('abstract.email')
+        print(email)
+        if Abstract.objects.filter(email = email).first():
+            return Response({'status': "failed",
+                             'message': "Email already exists",
+                             'response_code':status.HTTP_400_BAD_REQUEST})
         
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             account = serializer.save()
-            token, create = Token.objects.get_or_create(user = account)
+            token, create = Token.objects.get_or_create(user=account.customer)
             token_key = token.key
             data = {
-                "message" : "Account created successfully",
-                "username" : account.username,
+                "message": "Account Created Successfully",
+                "username": account.customer.username,
+                "email": account.customer.email,
+                "Phone number": account.customer.phone_no,
                 "token": token_key
             }
             return Response(data, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            data = serializer.errors
+
+        return Response(data)
+
+# class CustomerRegistrationView(generics.CreateAPIView):
+#     serializer_class = RegisterUserSerializer
+    
+#     def post(self, request): 
+#         data = {}
+#         mobile = request.data.get('phone_no')
+#         if Abstract.objects.filter(phone_no = mobile).first():
+#             return Response({'status': "failed",'message': "Mobile number already exists",'response_code':status.HTTP_400_BAD_REQUEST})
+        
+#         email = request.data.get('email')
+#         if Abstract.objects.filter(email = email).first():
+#             return Response({'status': "failed",'message': "Email already exists",'response_code':status.HTTP_400_BAD_REQUEST})
+        
+#         serializer = self.serializer_class(data=request.data)
+#         if serializer.is_valid():
+#             account = serializer.save()
+#             token, create = Token.objects.get_or_create(user = account)
+#             token_key = token.key
+#             data = {
+#                 "message" : "Account created successfully",
+#                 "username" : account.username,
+#                 "token": token_key
+#             }
+#             return Response(data, status=status.HTTP_201_CREATED)
+#         else:
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 class BookingView(generics.ListCreateAPIView):
     queryset = TurfBooking.objects.all()

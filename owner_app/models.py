@@ -23,20 +23,17 @@ class Owner(models.Model):
     abstract = models.ForeignKey(Abstract, on_delete=models.CASCADE)
     Organization_name = models.CharField(max_length=20)
     
-<<<<<<< HEAD
+    def __str__(self) :
+        return f' {self.Organization_name} ({self.abstract.username})' 
+    
 class Customer(models.Model):
     customer = models.ForeignKey(Abstract, on_delete=models.CASCADE)
     customer_name = models.CharField(max_length=100)
     
     def __str__(self):
         return self.customer_name
-    
-=======
-    def __str__(self) :
-        return f' {self.Organization_name} ({self.abstract.username})' 
 
 
->>>>>>> 50d6e560363820fa65aa433e74ce2616663ef200
 class Amenity(models.Model):
     name = models.CharField(max_length=50)
     icon = models.ImageField(upload_to='amenity_icon')

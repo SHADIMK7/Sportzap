@@ -3,7 +3,7 @@ from .models import *
 # Register your models here.
 
 admin.site.register(Owner)
-admin.site.register(Abstract)
+admin.site.register(Abstract)   
 admin.site.register(Turf)
 admin.site.register(Amenity)
 admin.site.register(TurfBooking)

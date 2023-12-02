@@ -16,16 +16,22 @@ class Abstract(AbstractUser):
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
     
+    def __str__(self):
+        return self.username
+    
 class Owner(models.Model):
     abstract = models.ForeignKey(Abstract, on_delete=models.CASCADE)
     Organization_name = models.CharField(max_length=20)
+    
+    def __str__(self) :
+        return f' {self.Organization_name} ({self.abstract.username})' 
 
 
 class Amenity(models.Model):
     name = models.CharField(max_length=50)
     icon = models.ImageField(upload_to='amenity_icon')
     
-    def _str_(self):
+    def __str__(self):
         return self.name
     
 class Turf(models.Model):

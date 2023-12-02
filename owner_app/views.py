@@ -10,36 +10,26 @@ from user_app.models import *
 
 class Registration(generics.CreateAPIView):
     serializer_class = RegistrationSerializer
-    
-    def post(self,request):
+
+    def post(self, request):
         data = {}
-        phone_no = request.data.get('phone_no')
-        if Owner.objects.filter(phone_no = phone_no).first():
-            return Response({'status': "failed",'message': "Phone number already exists",'response_code':status.HTTP_400_BAD_REQUEST})
-        
-        email = request.data.get('email')
-        if Owner.objects.filter(email=email).first():
-            return Response({'status': "failed",'message': "Email already exists",'response_code':status.HTTP_400_BAD_REQUEST})
-        
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             account = serializer.save()
-            token, create = Token.objects.get_or_create(user=account)
+            token, create = Token.objects.get_or_create(user=account.abstract)
             token_key = token.key
-            print('token ', token)
-            print('name is ',account.username )
-            print('email ', account.email)
-            data ={
-                "message":"Account Created Successfully",
-                "Organization_name":account.Organization_name,
-                "username":account.username,
-                "email":account.email,
-                "Phone number":account.phone_no,    
-                "token":token_key
-            }   
+            data = {
+                "message": "Account Created Successfully",
+                "Organization_name": account.Organization_name,
+                "username": account.abstract.username,
+                "email": account.abstract.email,
+                "Phone number": account.abstract.phone_no,
+                "token": token_key
+            }
+            return Response(data, status=status.HTTP_201_CREATED)
         else:
             data = serializer.errors
-        
+
         return Response(data)
     
     
@@ -47,18 +37,21 @@ class Registration(generics.CreateAPIView):
 class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
     queryset = Turf.objects.all()
     serializer_class = TurfSerializer
-    
+
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            d = serializer.save()
-            data = {
-                "message" : "turf created successfully",
-                "turf name" : d.name
-            }
-            return Response(data)
+        if request.user.usertype == 'owner':
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                d = serializer.save()
+                data = {
+                    "message": "turf created successfully",
+                    "turf name": d.name
+                }
+                return Response(data)
+            else:
+                return Response(serializer.errors)
         else:
-            return Response(serializer.errors)
+            return Response({'message': 'Only owners can create turfs'}, status=status.HTTP_403_FORBIDDEN)
         
 class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TurfSerializer

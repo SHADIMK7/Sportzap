@@ -1,3 +1,4 @@
+from datetime import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from user_app.models import *
@@ -63,6 +64,11 @@ class TurfBooking(models.Model):
     amount_paid = models.IntegerField(default=300, null=True)
     balance = models.IntegerField()      
     turf = models.ForeignKey(Turf, on_delete=models.SET_NULL, null=True)
+    is_match_ended = models.BooleanField(default=False)
+    
+    def is_match_ended(self):
+        now = timezone.now()
+        return now > self.end_time
 
     def __str__(self):
         return self.user_name

@@ -68,7 +68,9 @@ class TurfSerializer(serializers.ModelSerializer):
             image = validate_data['image'],
             price = validate_data['price'],
             description = validate_data['description'],
-            amenity = validate_data['amenity']
+            amenity = validate_data['amenity'],
+            latitude = validate_data['latitude'],
+            longitude = validate_data['longitude']
         )
         turf.save()
         return turf
@@ -105,7 +107,20 @@ class PaymentHistorySerializer(serializers.ModelSerializer):
 
 
 class MatchRatingSerializer(serializers.ModelSerializer):
+    is_match_ended = serializers.SerializerMethodField()
 
     class Meta:
         model = MatchRatingModel
-        fields = ['team1','team2','team1_score', 'team2_score', 'date_played','turf','remark'] 
+        fields = ['team1', 'team2', 'team1_score', 'team2_score', 'date_played','turf_booking', 'turf', 'remark', 'is_match_ended']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data['is_match_ended']:
+            return data
+        else: 
+            raise serializers.ValidationError({"abstract": "Match has not ended"})
+
+    def get_is_match_ended(self, instance):
+        turf_booking = instance.turf_booking
+        return turf_booking.is_match_ended()
+    

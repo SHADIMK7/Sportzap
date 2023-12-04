@@ -3,7 +3,6 @@ from owner_app.models import *
 from user_app.models import *
 from django.contrib.auth import get_user_model
 
-# from admin_app.serializers import TurfSerializer
 
 
 class CustomerListSerializer(serializers.ModelSerializer):

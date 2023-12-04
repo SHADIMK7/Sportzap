@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from . models import *
-
+from rest_framework import status
 
 
 class AbstractSerializer(serializers.ModelSerializer):
@@ -10,6 +10,7 @@ class AbstractSerializer(serializers.ModelSerializer):
         fields  = ['username', 'email', 'password' , 'phone_no', 'latitude', 'longitude', 'usertype']
         extra_kwargs = {
             'email': {'required': True, 'validators': []},
+            'phone_no': {'required': True, 'validators': []},
         }
         
         def create(self, validated_data):
@@ -28,7 +29,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
     def validate_abstract(self, abstract_data):
         usertype = abstract_data.get('usertype')
         if usertype != 'owner':
-            raise serializers.ValidationError({'usertype': 'Please use customer registration for registering customer. This registration is exclusively for TURF OWNERS'})
+            raise serializers.ValidationError({'status': "failed",'message': "Please use customer registration for registering customer. This registration is exclusively for TURF OWNERS",'response_code':status.HTTP_400_BAD_REQUEST})
         return abstract_data
         
     def create(self, validated_data):
@@ -39,11 +40,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
             
             email = abstract_data.get('email')
             if Abstract.objects.filter(email=email).exists():
-                raise serializers.ValidationError({'abstract': {'email': 'This email is already registered.'}})
+                raise serializers.ValidationError({'status': "failed",'message': "This email is already registered",'response_code':status.HTTP_400_BAD_REQUEST})
             
             phone_no = abstract_data.get('phone_no')
             if Abstract.objects.filter(phone_no=phone_no).exists():
-                raise serializers.ValidationError({'abstract': {'email': 'This phone no is already registered. '}})
+                raise serializers.ValidationError({'status': "failed",'message': "This phone no is already registered",'response_code':status.HTTP_400_BAD_REQUEST})
             
             abstract = abstract.save()
             abstract.set_password(password)
@@ -116,9 +117,15 @@ class MatchRatingSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if data['is_match_ended']:
-            return data
+            responce = {
+            'status': "success",
+            'message': "Match has been rated successfully",
+            'response_code': status.HTTP_201_CREATED,
+            'data': data,
+        }
+            return responce
         else: 
-            raise serializers.ValidationError({"abstract": "Match has not ended"})
+            raise serializers.ValidationError({'status': "failed",'message': "Match has not ended.",'response_code':status.HTTP_400_BAD_REQUEST})
 
     def get_is_match_ended(self, instance):
         turf_booking = instance.turf_booking

@@ -39,7 +39,7 @@ class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
     serializer_class = TurfSerializer
 
     def post(self, request):
-        if request.user.usertype == 'owner':
+        # if request.user.usertype == 'owner':
             serializer = self.serializer_class(data=request.data)
             if serializer.is_valid():
                 d = serializer.save()
@@ -50,8 +50,8 @@ class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
                 return Response(data)
             else:
                 return Response(serializer.errors)
-        else:
-            return Response({'message': 'Only owners can create turfs'}, status=status.HTTP_403_FORBIDDEN)
+        # else:
+        #     return Response({'message': 'Only owners can create turfs'}, status=status.HTTP_403_FORBIDDEN)
         
 class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TurfSerializer
@@ -82,7 +82,7 @@ class MatchRating(generics.ListCreateAPIView):
     
     def get_queryset(self):
         pk = self.kwargs['pk']
-        return MatchRatingModel.objects.filter(turf__pk = pk)    
+        return MatchRatingModel.objects.filter(turf_booking__pk=pk)   
     
 # class PaymentHistory(generics.ListCreateAPIView):
 #     queryset = PaymentHistory.objects.all()

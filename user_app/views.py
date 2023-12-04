@@ -44,12 +44,15 @@ class CustomerRegistrationView(generics.CreateAPIView):
             data = serializer.errors
 
         return Response(data)
+    
+    
         
 class BookingView(generics.ListCreateAPIView):
     queryset = TurfBooking.objects.all()
     serializer_class = TurfBookingSerializer
     
-
+    
+    
 class TurfDisplayView(generics.ListAPIView):
     queryset = Turf.objects.all()
     serializer_class = TurfDisplaySerializer
@@ -66,6 +69,8 @@ class TurfDisplayView(generics.ListAPIView):
             key=lambda turf: distance(user_location, (turf.latitude, turf.longitude)).miles
         )
         return turfs_with_distance
+    
+    
     
 class TeamView(generics.ListCreateAPIView):
     queryset = Team.objects.all()
@@ -87,18 +92,22 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
         
     def put(self, request, name):
         self.queryset = self.queryset.filter(id = name).first()
-        serializer = self.get_serializer(self.queryset, data = request.data)
-        print('HI')
-        if serializer.is_valid():
-            print('HI ENTERED')
-            serializer.save()
-            return Response({'status': "success",
-                             'message': "updated successfully",
-                             'response_code': status.HTTP_200_OK,
-                             'data': serializer.data})
+        if self.queryset:
+            serializer = self.get_serializer(self.queryset, data=request.data)
+            print('HI')
+            if serializer.is_valid():
+                print('HI ENTERED')
+                serializer.save()
+                return Response({'status': "success",
+                                'message': "updated successfully",
+                                'response_code': status.HTTP_200_OK,
+                                'data': serializer.data})
+            else:
+                return Response({'error': 'not updated'},
+                                status=status.HTTP_403_FORBIDDEN)
         else:
-            return Response({'error': 'not updated'},
-                            status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'not found'},
+                            status=status.HTTP_404_NOT_FOUND)
         
     def delete(self, request, name):
         self.queryset = self.queryset.filter(id = name).first()
@@ -106,6 +115,8 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Response({'status': "success",
                          'message': "deleted successfully",
                          'response_code': status.HTTP_204_NO_CONTENT})
+        
+        
     
 class PlayerView(generics.ListCreateAPIView):
     queryset = Player.objects.all()
@@ -114,7 +125,7 @@ class PlayerView(generics.ListCreateAPIView):
 class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
-    lookup_field = "name"
+    # lookup_field = "name"
     
     def get(self, request, name):
         self.queryset = self.queryset.filter(player_name = name).first()

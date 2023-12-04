@@ -58,23 +58,29 @@ class TurfDisplaySerializer(serializers.ModelSerializer):
         model = Turf
         fields = '__all__'
         
-    # def update(self, instance, validated_data):
-    #     instance.team_name = validated_data.get('team_name', instance.team_name)
-    #     instance.team_pic = validated_data.get('team_pic', instance.team_pic)
-    #     instance.team_strength = validated_data.get('team_strength', instance.team_strength)
-    #     instance.team_longitude = validated_data.get('team_longitude', instance.team_longitude)
-    #     instance.team_latitude = validated_data.get('team_latitude', instance.team_latitude)
-    #     instance.save()
-    #     return instance
-        
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
         fields = '__all__'
+
         
 class TeamSerializer(serializers.ModelSerializer):
-    players = PlayerSerializer(many=True, read_only=True)
+    players = PlayerSerializer(many=True)
     
     class Meta:
         model = Team
         fields = '__all__'
+        
+    def update(self, instance, validated_data):
+        players_data = validated_data.pop('players', [])
+        instance = super().update(instance, validated_data)
+
+        for player_data in players_data:
+            print('working')
+            player_instance = instance.players.filter(id=player_data.get('id')).first()
+            if player_instance:
+                PlayerSerializer().update(player_instance, player_data)
+            else:
+                instance.players.create(**player_data)
+
+        return instance

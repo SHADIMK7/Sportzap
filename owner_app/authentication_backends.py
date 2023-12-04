@@ -8,7 +8,8 @@ class EmailOrUsernameModelBackend(ModelBackend):
         try:
             user = UserModel.objects.get(email=username)
         except UserModel.DoesNotExist:
-            user = UserModel.objects.get(username=username)
+            # If the username is not an email, try to get the user by username
+            user = UserModel.objects.get(phone_no=username)
 
         if user.check_password(password):
             return user

@@ -12,16 +12,18 @@ from django.db.models import Sum
 from owner_app.models import TurfBooking,PaymentHistoryModel
 from decimal import Decimal
 from django.db.models import F, Sum,Count
-
+from owner_app.serializers import RegistrationSerializer
 
 # Create your views here.
 
+
 class OwnerList(APIView):
     def get(self, request):
-        owners = Owner.objects.filter(abstract__usertype='owner')
+        owners = Owner.objects.all()
         serializer = OwnerSerializer(owners, many=True, context={'request': request})
-        return Response(serializer.data)
-    
+        # return Response(serializer.data)
+        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+
     
 class OwnerDelete(APIView):
     def delete(self,request,pk):
@@ -29,76 +31,109 @@ class OwnerDelete(APIView):
 
             stream=Owner.objects.get(pk=pk)
             stream.delete()
-            return Response({"message": "Deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+            # return Response({"message": "Deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
+
         except Owner.DoesNotExist:
-            return Response({"message": "Object does not exist"}, status=status.HTTP_404_NOT_FOUND)
-        
+            # return Response({"message": "Object does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"status": "failed", "message": "Not Found", "response_code": status.HTTP_404_NOT_FOUND})
+
 
 class TurfList(generics.ListAPIView):
     queryset = Turf.objects.all()
     serializer_class = TurfSerializer
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
 
    
 
 class TurfActiveDelete(APIView):
     queryset = Turf.objects.all()
     serializer_class = TurfSerializer
-    def get_object(self):
+    def get(self,request,pk):
         try:
-            return self.queryset.get(pk=self.kwargs[self.lookup_field])
-        except Turf.DoesNotExist:
-            raise Http404
-    def delete(self, request, *args, **kwargs):
+            turf=Turf.objects.get(pk=pk)
+        except:
+            return Response({"status": "failed", "message": "not found" , "response_code": status.HTTP_404_NOT_FOUND})
+        serializer=TurfSerializer(turf)
+        return Response(serializer.data)
+    def delete(self,request,pk):
         try:
-            instance = self.get_object()
-            instance.delete()
-            return Response({"message": "Deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+            turf=Turf.objects.get(pk=pk)
+            turf.delete()
+            return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
+
         except Turf.DoesNotExist:
-            return Response({"message": "Object does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"status": "failed", "message": "Does not exist", "response_code": status.HTTP_404_NOT_FOUND})
 
-    def patch(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.is_active = True  
-        instance.save()
-        serializer = self.serializer_class(instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def patch(self,request,pk):
+        turf=Turf.objects.get(pk=pk)
+        serializer=TurfSerializer(turf,data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            # return Response(serializer.data)
+            return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
 
-    # def put(self,request,pk):
-    #     stream=StreamField.objects.get(pk=pk)
-    #     serializer=StreamFieldSerializer(stream,data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response(serializer.data)
-    #     else:
-    #         return Response(serializer.errors)
-        
+        else:
+            return Response(serializer.errors)
+            # return Response({"status": "failed", "message": serializer.errors, "response_code": status.HTTP_406_NOT_ACCEPTABLE})
+
+        # instance = self.get_object()
+        # instance.is_active = True  
+        # instance.save()
+        # serializer = self.serializer_class(instance)
+        # return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CustomerList(generics.ListAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerListSerializer
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+
 
 class CustomerListDelete(generics.RetrieveDestroyAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerListSerializer
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"status": "success", "message": "User deleted Successfully", "response_code": status.HTTP_200_OK})
+
+
+
+
+
     
       
 class TurfBookingView(APIView):
     def get(self,request):
         booking= TurfBooking.objects.all()
         serializer= BookingSerializer(booking,many=True)
-        return Response(serializer.data)
+        # return Response(serializer.data)
+        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
 
 class TurfBookingCancel(mixins.RetrieveModelMixin,mixins.DestroyModelMixin,generics.GenericAPIView):
     queryset = TurfBooking.objects.all()
     serializer_class = BookingSerializer
 
     def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-    
+        # return self.retrieve(request, *args, **kwargs)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        # return Response(serializer.data)
+        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+   
 
     def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
-
+        # return self.destroy(request, *args, **kwargs)
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response( {"status": "success", "message": "Turf booking cancelled", "response_code" :status.HTTP_200_OK})
 
 
 class TransactionHistory(mixins.ListModelMixin,generics.GenericAPIView):
@@ -106,8 +141,11 @@ class TransactionHistory(mixins.ListModelMixin,generics.GenericAPIView):
     serializer_class = TransactionHistorySerializer
 
     def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
+        # return self.list(request, *args, **kwargs)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+   
 
 
 class AdminIncomeView(APIView):
@@ -135,7 +173,8 @@ class AdminIncomeView(APIView):
             'monthly_balance_amount':monthly_balance_amount,
             'yearly_balance_amount':yearly_balance_amount
         })
-        return Response(serializer.data)
+        # return Response(serializer.data)
+        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
 
 
 # class AdminView(APIView):

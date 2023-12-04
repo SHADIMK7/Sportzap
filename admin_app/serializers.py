@@ -1,14 +1,18 @@
 from rest_framework import serializers
 from owner_app.models import *
 from user_app.models import *
+from django.contrib.auth import get_user_model
+
 # from admin_app.serializers import TurfSerializer
 
 
 class CustomerListSerializer(serializers.ModelSerializer):
     booking_count = serializers.SerializerMethodField()
+    
     class Meta:
         model= Customer
         fields=['id','username', 'email', 'password', 'customer_mobile','booking_count']
+
     def get_booking_count(self, customer):
         booking_count = TurfBooking.objects.filter(user=customer).count()
         return booking_count
@@ -20,19 +24,40 @@ class TurfSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Turf
-        fields='__all__'
+        fields = '__all__'
 
+
+
+class AbstractUserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Abstract
+        fields = ['first_name','last_name','email','phone_no']
 
 class OwnerSerializer(serializers.ModelSerializer):
+
+    abstract_user_details = AbstractUserSerializer(source='abstract', read_only=True)
     turf = serializers.SerializerMethodField()
 
     class Meta:
         model = Owner
-        fields='__all_'
+        fields = ['id', 'abstract_user_details', 'turf']
+
     def get_turf(self, owner):
         turfs = owner.turf_set.all()
         turf_serializer = TurfSerializer(turfs, many=True)
         return turf_serializer.data
+    
+# class OwnerSerializer(serializers.ModelSerializer):
+#     turf = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = Owner
+#         fields = ['id', 'user_name',  'turf']
+#     def get_turf(self, owner):
+#         turfs = owner.turf_set.all()
+#         turf_serializer = TurfSerializer(turfs, many=True)
+#         return turf_serializer.data
 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -81,6 +106,7 @@ class AdminIncomeSerializer(serializers.Serializer):
 
 class TurfUpdateSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only='True')
+
     name = serializers.CharField(read_only='True')
     location = serializers.CharField(read_only='True')
     price = serializers.BooleanField(read_only='True')

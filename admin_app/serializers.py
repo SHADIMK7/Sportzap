@@ -4,17 +4,16 @@ from user_app.models import *
 from django.contrib.auth import get_user_model
 
 
-
-class CustomerListSerializer(serializers.ModelSerializer):
-    booking_count = serializers.SerializerMethodField()
+# class CustomerListSerializer(serializers.ModelSerializer):
+#     booking_count = serializers.SerializerMethodField()
     
-    class Meta:
-        model= Customer
-        fields=['id','username', 'email', 'password', 'customer_mobile','booking_count']
+#     class Meta:
+#         model= Customer
+#         fields=['id','username', 'email', 'password', 'customer_mobile','booking_count']
 
-    def get_booking_count(self, customer):
-        booking_count = TurfBooking.objects.filter(user=customer).count()
-        return booking_count
+#     def get_booking_count(self, customer):
+#         booking_count = TurfBooking.objects.filter(user=customer).count()
+#         return booking_count
     
 
 
@@ -40,12 +39,25 @@ class OwnerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Owner
-        fields = ['id', 'abstract_user_details', 'turf']
+        fields = ['id', 'abstract_user_details', 'turf','Organization_name']
 
     def get_turf(self, owner):
         turfs = owner.turf_set.all()
         turf_serializer = TurfSerializer(turfs, many=True)
         return turf_serializer.data
+
+class CustomerListSerializer(serializers.ModelSerializer):
+
+    abstract_user_details = AbstractUserSerializer(source='customer', read_only=True)
+    booking_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Customer
+        fields = ['id', 'abstract_user_details', 'booking_count','customer_name']
+    def get_booking_count(self, customer):
+        booking_count = TurfBooking.objects.filter(user=customer).count()
+        return booking_count
+    
     
 # class OwnerSerializer(serializers.ModelSerializer):
 #     turf = serializers.SerializerMethodField()

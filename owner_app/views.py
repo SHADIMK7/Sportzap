@@ -26,7 +26,7 @@ class Registration(generics.CreateAPIView):
                 "Phone number": account.abstract.phone_no,
                 "token": token_key
             }
-            return Response(data, status=status.HTTP_201_CREATED)
+            return Response({'status':"success",'message': data,'response_code': status.HTTP_201_CREATED,})
         else:
             data = serializer.errors
 
@@ -47,11 +47,11 @@ class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
                     "message": "turf created successfully",
                     "turf name": d.name
                 }
-                return Response(data)
+                return Response({'status':"success",'message': data,'response_code': status.HTTP_201_CREATED,})
             else:
                 return Response(serializer.errors)
         # else:
-        #     return Response({'message': 'Only owners can create turfs'}, status=status.HTTP_403_FORBIDDEN)
+        #     return Response({'status': "failed",'message': "Only owners can create turfs",'response_code':status.HTTP_400_BAD_REQUEST})
         
 class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TurfSerializer
@@ -63,7 +63,7 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object() 
         self.perform_destroy(instance)
-        return Response({'status':"Destroyed",'message': "Turf has been deleted successfully",'response_code': status.HTTP_204_NO_CONTENT,})    
+        return Response({'status':"success",'message': "Turf deleted successfully",'response_code': status.HTTP_200_OK,})
 
 
     
@@ -83,6 +83,21 @@ class MatchRating(generics.ListCreateAPIView):
     def get_queryset(self):
         pk = self.kwargs['pk']
         return MatchRatingModel.objects.filter(turf_booking__pk=pk)   
+    
+    def perform_create(self, serializer):
+        print("entered")
+        instance = serializer.save()
+        serialized_data = MatchRatingSerializer(instance).data
+        print("entered")
+        response_data = {
+            'status': "success",
+            'message': "Match has been rated successfully",
+            'response_code': status.HTTP_201_CREATED,
+            'data': serialized_data,
+        }
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+    
     
 # class PaymentHistory(generics.ListCreateAPIView):
 #     queryset = PaymentHistory.objects.all()

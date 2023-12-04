@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from user_app.models import *
@@ -49,6 +50,8 @@ class Turf(models.Model):
     image = models.ImageField(upload_to='image/') 
     description = models.CharField(max_length=255)
     amenity = models.ManyToManyField(Amenity)
+    latitude = models.FloatField(null=True)
+    longitude = models.FloatField(null=True)
     # is_active = models.BooleanField(default=False)
 
     def __str__(self):
@@ -70,9 +73,18 @@ class TurfBooking(models.Model):
     amount_paid = models.IntegerField(default=300, null=True)
     balance = models.IntegerField()      
     turf = models.ForeignKey(Turf, on_delete=models.SET_NULL, null=True)
+    is_match_ended = models.BooleanField(default=False)
+    
+    def is_match_ended(self):
+        now = timezone.now().time()
+        return now >= self.end_time
 
     def __str__(self):
-        return self.user_name
+        return f"{self.user_name} - Match Ended: {self.is_match_ended()}"
+
+    class Meta:
+        unique_together = ['turf', 'date', 'start_time', 'end_time']
+
 
 class PaymentHistoryModel(models.Model):
     turf_booking = models.ForeignKey(TurfBooking, on_delete=models.SET_NULL, null=True)
@@ -80,7 +92,7 @@ class PaymentHistoryModel(models.Model):
     user = models.ForeignKey(Customer,on_delete=models.SET_NULL, null=True)
     
     def __str__(self):
-        return self.user.username + "has booked " + self.turf.name 
+        return self.user.customer_name + "has booked " + self.turf.name 
 
 
 class MatchRatingModel(models.Model):
@@ -88,9 +100,11 @@ class MatchRatingModel(models.Model):
     team2 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team2_match')
     team1_score = models.IntegerField(default=0)
     team2_score = models.IntegerField(default=0)
+    turf_booking = models.ForeignKey(TurfBooking, on_delete=models.CASCADE) 
+    remark = models.CharField(max_length=50, null=True)
     date_played = models.DateField()
     turf = models.ForeignKey(Turf, on_delete=models.CASCADE)
-    remark = models.CharField(max_length=50, null=True)
-    
+
+
     def __str__(self):
         return f"{self.team1} {self.team1_score} : {self.team2} {self.team2_score}"

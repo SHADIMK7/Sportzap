@@ -53,22 +53,22 @@ class BookingView(generics.ListCreateAPIView):
     
     
     
-class TurfDisplayView(generics.ListAPIView):
-    queryset = Turf.objects.all()
-    serializer_class = TurfDisplaySerializer
+# class TurfDisplayView(generics.ListAPIView):
+#     queryset = Turf.objects.all()
+#     serializer_class = TurfDisplaySerializer
     
-    def get_queryset(self):
-        user_latitude = float(self.request.query_params.get('latitude', 0))
-        user_longitude = float(self.request.query_params.get('longitude', 0))
+#     def get_queryset(self):
+#         user_latitude = float(self.request.query_params.get('latitude', 0))
+#         user_longitude = float(self.request.query_params.get('longitude', 0))
 
-        user_location = (user_latitude, user_longitude)
+#         user_location = (user_latitude, user_longitude)
 
-        turfs = Turf.objects.all()
-        turfs_with_distance = sorted(
-            turfs,
-            key=lambda turf: distance(user_location, (turf.latitude, turf.longitude)).miles
-        )
-        return turfs_with_distance
+#         turfs = Turf.objects.all()
+#         turfs_with_distance = sorted(
+#             turfs,
+#             key=lambda turf: distance(user_location, (turf.latitude, turf.longitude)).miles
+#         )
+#         return turfs_with_distance
     
     
     
@@ -94,7 +94,6 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
         self.queryset = self.queryset.filter(id = name).first()
         if self.queryset:
             serializer = self.get_serializer(self.queryset, data=request.data)
-            print('HI')
             if serializer.is_valid():
                 print('HI ENTERED')
                 serializer.save()

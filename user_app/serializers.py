@@ -76,7 +76,6 @@ class TeamSerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
 
         for player_data in players_data:
-            print('working')
             player_instance = instance.players.filter(id=player_data.get('id')).first()
             if player_instance:
                 PlayerSerializer().update(player_instance, player_data)

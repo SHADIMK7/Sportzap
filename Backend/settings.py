@@ -104,6 +104,7 @@ DATABASES = {
     }
 }
 
+<<<<<<< HEAD
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
@@ -114,6 +115,18 @@ DATABASES = {
 #         'PORT': '5432',
 #    }
 # }
+=======
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'sportzap',
+        'USER': 'postgres',
+        'PASSWORD': '12345',
+        'HOST': 'localhost', 
+        'PORT': '5432',
+   }
+}
+>>>>>>> c54b88a276891e6af45b2ec83ee17e48968edd0e
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -157,6 +170,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "owner_app.Abstract"
+
 
 REST_FRAMEWORK = {
 'DEFAULT_AUTHENTICATION_CLASSES': [

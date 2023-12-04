@@ -4,8 +4,15 @@ from owner_app.models import Owner,Turf
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework import generics,mixins
+<<<<<<< HEAD
 from user_app.models import Customer
 from admin_app.serializers import TransactionHistorySerializer,TurfUpdateSerializer,CustomerListSerializer,OwnerSerializer,TurfSerializer,BookingSerializer,IncomeSerializer,AdminIncomeSerializer
+=======
+from user_app.serializers import RegisterUserSerializer
+# from user_app.models import Customer
+from owner_app.models import *
+from admin_app.serializers import TurfUpdateSerializer,CustomerListSerializer
+>>>>>>> c54b88a276891e6af45b2ec83ee17e48968edd0e
 from django.http import Http404
 from datetime import datetime, timedelta
 from django.db.models import Sum

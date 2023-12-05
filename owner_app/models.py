@@ -108,3 +108,11 @@ class MatchRatingModel(models.Model):
 
     def __str__(self):
         return f"{self.team1} {self.team1_score} : {self.team2} {self.team2_score}"
+    
+class Gallery(models.Model):
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='gallery_images/')
+    description = models.CharField(max_length=255)
+    
+    def __str__(self):
+        return self.description

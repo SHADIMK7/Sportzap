@@ -125,3 +125,11 @@ class MatchRatingModel(models.Model):
 class RewardPointModel(models.Model):
     booking = models.ForeignKey(TurfBooking, on_delete=models.CASCADE)
     reward_points = models.IntegerField(default=0)
+    
+class Gallery(models.Model):
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='gallery_images/')
+    description = models.CharField(max_length=255)
+    
+    def __str__(self):
+        return self.description

@@ -168,8 +168,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-
-
 AUTHENTICATION_BACKENDS = [
     'owner_app.authentication_backends.EmailOrUsernameModelBackend',
     'django.contrib.auth.backends.ModelBackend',

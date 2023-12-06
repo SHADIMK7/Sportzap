@@ -57,21 +57,21 @@ MIDDLEWARE = [
 
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS = True
 
 # CORS_ALLOW_METHODS = ['*']
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",  
+]
+
+# CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+CORS_ALLOW_HEADERS = ['Content-Type','Authorization']
 # CORS_ALLOWED_ORIGINS = [
 #     "http://localhost:4200",  
 # ]
-
-
-# CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
-# CORS_ALLOW_HEADERS = ['Content-Type']
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:4200",  
-# ]
-
 
 ROOT_URLCONF = 'Backend.urls'
 

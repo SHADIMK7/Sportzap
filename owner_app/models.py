@@ -126,6 +126,10 @@ class RewardPointModel(models.Model):
     booking = models.ForeignKey(TurfBooking, on_delete=models.CASCADE)
     reward_points = models.IntegerField(default=0)
     
+    def __str__(self) -> str:
+        return f'{self.booking.user_name} earned {self.reward_points}'
+    
+    
 class Gallery(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='gallery_images/')
@@ -133,3 +137,17 @@ class Gallery(models.Model):
     
     def __str__(self):
         return self.description
+
+
+
+class UserBookingHistory(models.Model):
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    turf_booked = models.ForeignKey(TurfBooking, on_delete=models.CASCADE)
+    
+    
+    
+    
+# class UserReviewModel(models.Model):
+#     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+#     review = models.CharField(max_length=50)
+#     sentiment = models.CharField(null=True,max_length=50)

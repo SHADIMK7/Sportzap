@@ -49,7 +49,15 @@ class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
             d = serializer.save()
             data = {
                 "message": "turf created successfully",
-                "turf name": d.name
+                "owner" : d.owner.pk,
+                "turf name": d.name,
+                "location" : d.location,
+                "price" : d.price,
+                # "image" : d.image,
+                "description" : d.description,
+                # "amenity" : d.amenity.name,
+                "latitude" : d.latitude,
+                "longitude" : d.longitude
             }
             return Response({'status':"success",'message': data,'response_code': status.HTTP_201_CREATED,})
         else:
@@ -62,6 +70,33 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
         pk = self.kwargs['pk']
         return Turf.objects.filter(pk=pk)
     
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        updated_data = {
+            'owner': instance.owner,
+            'name': serializer.validated_data.get('name', instance.name),
+            'location': serializer.validated_data.get('location', instance.location),
+            'price': serializer.validated_data.get('price', instance.price),
+            'image': serializer.validated_data.get('image', instance.image),
+            'description': serializer.validated_data.get('description', instance.description),
+            'amenity': [amenity.name for amenity in serializer.validated_data.get('amenity', instance.amenity.all())],
+            'latitude': serializer.validated_data.get('latitude', instance.latitude),
+            'longitude': serializer.validated_data.get('longitude', instance.longitude),
+        }
+
+        return Response({
+            'status': "success",
+            'message': "Turf updated successfully",
+            'data': updated_data,
+            'response_code': status.HTTP_200_OK,
+        })
+    
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object() 
         self.perform_destroy(instance)
@@ -69,7 +104,7 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
 
 
     
-class PaymentHistory(generics.ListCreateAPIView):
+class PaymentHistory(generics.ListAPIView):
     # queryset = PaymentHistoryModel.objects.all()
     serializer_class = PaymentHistorySerializer
     

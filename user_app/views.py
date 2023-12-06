@@ -257,3 +257,37 @@ class RewardPoints(generics.ListAPIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+    
+    
+    
+class UserBookingHistoryView(generics.ListAPIView):
+    serializer_class = UserBookingHistorySerializer
+
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return UserBookingHistory.objects.filter(user=pk)
+    
+
+    
+# class UserReview(generics.ListCreateAPIView):
+#     serializer_class = UserReviewSerializer
+
+#     def get_queryset(self):
+#         pk = self.kwargs['pk']
+#         return UserReviewModel.objects.filter(user=pk)
+
+#     def perform_create(self, serializer):
+#         pk = self.kwargs['pk']  
+#         customer_instance = Customer.objects.get(id=pk)
+#         serializer.save(user=customer_instance)
+    
+#     def create(self, request, *args, **kwargs):
+#         response =  super().create(request, *args, **kwargs)
+#         data = {
+#             'status': "success",
+#             "message" : "User has reviewed successfully",
+#             "response_code" : status.HTTP_201_CREATED,
+#             "data": response.data,
+#         }
+#         return Response(data)
+    

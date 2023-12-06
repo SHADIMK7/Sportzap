@@ -106,3 +106,41 @@ class RewardPointSerializer(serializers.ModelSerializer):
     #     if self.booking.is_match_ended == "True":
     #         reward_points = reward_points + 10/100 * (self.booking.price)
     #         return reward_points
+    
+    
+class UserBookingHistorySerializer(serializers.ModelSerializer):
+    user_name = serializers.SerializerMethodField()
+    date_booked = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+    amount_paid = serializers.SerializerMethodField()
+    balance = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserBookingHistory
+        fields = ['user', 'turf_booked', 'user_name', 'date_booked', 'price','amount_paid', 'balance']
+        
+    def get_user_name(self,object):
+        return object.user.customer_name    
+    
+    def get_date_booked(self,object):
+        return object.turf_booked.date
+    
+    def get_price(self,object):
+        return object.turf_booked.price
+    
+    def get_amount_paid(self,object):
+        return object.turf_booked.amount_paid
+    
+    def get_balance(self,object):
+        return object.turf_booked.balance
+    
+    
+# class UserReviewSerializer(serializers.ModelSerializer):
+#     user = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = UserReviewModel
+#         fields = ['user', 'review', 'sentiment']
+
+#     def get_user(self, obj):
+#         return obj.user.id

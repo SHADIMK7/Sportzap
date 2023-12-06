@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 from owner_app.models import *
-# from owner_app.models import Customer
 from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
@@ -13,9 +12,18 @@ from django.contrib.auth.models import AbstractUser
     
 #     def __str__(self):
 #         return self.username
+
+SKILL_CHOICES = (
+    ('Beginner', 'Beginner'),
+    ('Amateur', 'Amateur'),
+    ('Intermediate', 'Intermediate'),
+    ('Advanced', 'Advanced'),
+    ('Professional', 'Professional')
+)
     
 class Team(models.Model):
     team_name = models.CharField(max_length=55)
+    team_skill = models.CharField(choices=SKILL_CHOICES, default='Beginner', max_length=20)
     team_pic = models.ImageField(upload_to='team_image/', null=True)
     team_strength = models.IntegerField()
     team_longitude = models.FloatField()
@@ -26,6 +34,7 @@ class Team(models.Model):
     
 class Player(models.Model):
     player_name = models.CharField(max_length=55)
+    player_skill = models.CharField(choices=SKILL_CHOICES, default='Beginner', max_length=20)
     player_pic = models.ImageField(upload_to='player_image/', null=True)
     player_position = models.CharField(max_length=10)
     team = models.ForeignKey('Team', related_name='players', on_delete=models.SET_NULL, null=True)
@@ -34,6 +43,3 @@ class Player(models.Model):
         return self.player_name
     
 
-# class RewardPoints(models.Model):
-#     user = models.ForeignKey(Customer,on_delete=models.CASCADE)
-    

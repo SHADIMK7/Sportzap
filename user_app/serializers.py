@@ -73,10 +73,15 @@ class TeamSerializer(serializers.ModelSerializer):
         
     def update(self, instance, validated_data):
         players_data = validated_data.pop('players', [])
+        
+        max_players = instance.team_strength if instance else self.Meta.model.team_strength_limit
+
+        if len(instance.players.all()) + len(players_data) > max_players:
+            raise serializers.ValidationError(f'Team can have at most {max_players} players.')
+
         instance = super().update(instance, validated_data)
 
         for player_data in players_data:
-            print('working')
             player_instance = instance.players.filter(id=player_data.get('id')).first()
             if player_instance:
                 PlayerSerializer().update(player_instance, player_data)
@@ -84,3 +89,20 @@ class TeamSerializer(serializers.ModelSerializer):
                 instance.players.create(**player_data)
 
         return instance
+    
+    
+class RewardPointSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField
+    reward_points = serializers.SerializerMethodField
+    
+    class Meta:
+        model = RewardPointModel
+        fields = ['booking', 'reward_points']
+        
+    # def get_user(self,request):
+    #     return self.booking.user
+    
+    # def get_reward_points(self,request):
+    #     if self.booking.is_match_ended == "True":
+    #         reward_points = reward_points + 10/100 * (self.booking.price)
+    #         return reward_points

@@ -56,24 +56,18 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class TurfSerializer(serializers.ModelSerializer):
-    amenity = serializers.PrimaryKeyRelatedField(queryset = Amenity.objects.all(), many=True)
-    
+    amenity = serializers.PrimaryKeyRelatedField(queryset=Amenity.objects.all(), many=True)
+
     class Meta:
         model = Turf
-        fields = "__all__"
-        
-    def create(self, validate_data):
-        turf = Turf(
-            name = validate_data['name'].capitalize(),
-            location = validate_data['location'],
-            image = validate_data['image'],
-            price = validate_data['price'],
-            description = validate_data['description'],
-            amenity = validate_data['amenity'],
-            latitude = validate_data['latitude'],
-            longitude = validate_data['longitude']
-        )
-        turf.save()
+        exclude = ["owner"]
+
+    def create(self, validated_data):
+        owner_pk = self.context.get('owner_pk')
+        amenity_data = validated_data.pop('amenity')
+        turf = Turf.objects.create(owner_id=owner_pk, **validated_data)
+        turf.amenity.set(amenity_data)
+
         return turf
     
     
@@ -87,24 +81,25 @@ class PaymentHistorySerializer(serializers.ModelSerializer):
     end_time = serializers.SerializerMethodField() 
     amount_paid = serializers.SerializerMethodField()
     balance = serializers.SerializerMethodField()
+
     class Meta:
         model = PaymentHistoryModel
-        fields = ['turf','turf_booking', 'price', 'user_name','start_time','end_time','amount_paid', 'balance']
-        
+        fields = ['turf', 'turf_booking', 'price', 'user_name', 'start_time', 'end_time', 'amount_paid', 'balance']
+
     def get_turf(self, object):
         return object.turf.id if object.turf else None
-        
-    def get_start_time(self,object):
-        return object.turf_booking.start_time
-    
-    def get_end_time(self,object):
-        return object.turf_booking.end_time
-    
-    def get_amount_paid(self,object):
-        return object.turf_booking.amount_paid
-    
-    def get_balance(self,object):
-        return object.turf_booking.balance
+
+    def get_start_time(self, object):
+        return object.turf_booking.start_time if object.turf_booking else None
+
+    def get_end_time(self, object):
+        return object.turf_booking.end_time if object.turf_booking else None
+
+    def get_amount_paid(self, object):
+        return object.turf_booking.amount_paid if object.turf_booking else None
+
+    def get_balance(self, object):
+        return object.turf_booking.balance if object.turf_booking else None
 
 
 class MatchRatingSerializer(serializers.ModelSerializer):

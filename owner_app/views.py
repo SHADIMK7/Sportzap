@@ -35,23 +35,25 @@ class Registration(generics.CreateAPIView):
     
     
 class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
-    queryset = Turf.objects.all()
+    # queryset = Turf.objects.all()
     serializer_class = TurfSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return Turf.objects.filter(owner__pk=pk)
 
-    def post(self, request):
-        # if request.user.usertype == 'owner':
-            serializer = self.serializer_class(data=request.data)
-            if serializer.is_valid():
-                d = serializer.save()
-                data = {
-                    "message": "turf created successfully",
-                    "turf name": d.name
-                }
-                return Response({'status':"success",'message': data,'response_code': status.HTTP_201_CREATED,})
-            else:
-                return Response(serializer.errors)
-        # else:
-        #     return Response({'status': "failed",'message': "Only owners can create turfs",'response_code':status.HTTP_400_BAD_REQUEST})
+    def post(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        serializer = self.serializer_class(data=request.data, context={'owner_pk': pk})
+        if serializer.is_valid():
+            d = serializer.save()
+            data = {
+                "message": "turf created successfully",
+                "turf name": d.name
+            }
+            return Response({'status':"success",'message': data,'response_code': status.HTTP_201_CREATED,})
+        else:
+            return Response(serializer.errors)
         
 class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TurfSerializer
@@ -75,27 +77,38 @@ class PaymentHistory(generics.ListCreateAPIView):
         pk = self.kwargs['pk']
         return PaymentHistoryModel.objects.filter(turf__pk=pk)
     
+    # def get(self,request,*args, **kwargs):
+    #     PaymentHistoryModel.objects.filter(turf__pk=kwargs['pk'])
+    #     return Response({"success"})
+        
+    # def post(self, request, *args, **kwargs):
+    #     return super().post(request, *args, **kwargs)   
+        
 
 class MatchRating(generics.ListCreateAPIView):
-    # queryset = MatchRatingModel.objects.all()
     serializer_class = MatchRatingSerializer
     
     def get_queryset(self):
         pk = self.kwargs['pk']
         return MatchRatingModel.objects.filter(turf_booking__pk=pk)   
     
-    def perform_create(self, serializer):
-        print("entered")
-        instance = serializer.save()
-        serialized_data = MatchRatingSerializer(instance).data
-        print("entered")
-        response_data = {
-            'status': "success",
-            'message': "Match has been rated successfully",
-            'response_code': status.HTTP_201_CREATED,
-            'data': serialized_data,
-        }
-        return Response(response_data, status=status.HTTP_201_CREATED)
+    def post(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        serializer = self.serializer_class(data=request.data, context={'owner_pk': pk})
+        
+        if serializer.is_valid():
+            content = serializer.save()
+            
+            response_data = {
+                'status': "success",
+                'message': "Match has been rated successfully",
+                'response_code': status.HTTP_201_CREATED,
+                'data': serializer.data,
+            }
+            
+            return Response(response_data)
+        else:
+            return Response(serializer.errors)
 
     
     

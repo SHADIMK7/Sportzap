@@ -89,3 +89,20 @@ class TeamSerializer(serializers.ModelSerializer):
                 instance.players.create(**player_data)
 
         return instance
+    
+    
+class RewardPointSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField
+    reward_points = serializers.SerializerMethodField
+    
+    class Meta:
+        model = RewardPointModel
+        fields = ['booking', 'reward_points']
+        
+    # def get_user(self,request):
+    #     return self.booking.user
+    
+    # def get_reward_points(self,request):
+    #     if self.booking.is_match_ended == "True":
+    #         reward_points = reward_points + 10/100 * (self.booking.price)
+    #         return reward_points

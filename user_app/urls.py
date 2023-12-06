@@ -11,5 +11,7 @@ urlpatterns = [
     path('team_list/', TeamView.as_view(), name='team_list'),
     path('team_list/<int:name>/', TeamDetailView.as_view(), name='team_detail'),
     path('player/', PlayerView.as_view(), name='player'),
+    path('player_details/<str:name>/', PlayerDetail.as_view(), name='player_detail'),
+    path('rewards/<int:pk>/', RewardPoints.as_view(), name='rewards'),
     path('player/<int:name>/', PlayerDetail.as_view(), name='player_detail'),
 ]

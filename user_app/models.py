@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 from owner_app.models import *
-# from owner_app.models import Customer
 from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
@@ -44,6 +43,3 @@ class Player(models.Model):
         return self.player_name
     
 
-# class RewardPoints(models.Model):
-#     user = models.ForeignKey(Customer,on_delete=models.CASCADE)
-    

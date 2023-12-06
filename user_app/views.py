@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework import generics, status
+from rest_framework import generics, status, mixins
 from . models import *
 from . serializers import *
 from owner_app.models import *
@@ -157,3 +157,28 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
                          'message': "deleted successfully",
                          'response_code': status.HTTP_204_NO_CONTENT})
     
+
+
+class RewardPoints(generics.ListAPIView):
+    serializer_class = RewardPointSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return RewardPointModel.objects.filter(booking__user__pk=pk)
+    
+    def list(self,request , *args, **kwargs):
+        user = self.kwargs['pk']
+        reward_points = RewardPointModel.objects.filter(booking__user__pk=user).aggregate(total_points=models.Sum('reward_points'))
+        
+        if not reward_points['total_points']:
+            total_points = 0
+        else:
+            total_points = reward_points['total_points']
+            
+        response_data = {
+            'user': user,
+            'total_points': total_points,
+            'reward_points': self.serializer_class(self.get_queryset(), many=True).data
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)

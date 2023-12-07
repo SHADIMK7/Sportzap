@@ -141,6 +141,16 @@ class Gallery(models.Model):
     
     def __str__(self):
         return self.description
+    
+    
+class Profile(models.Model):
+    user = models.ForeignKey(Abstract, on_delete=models.CASCADE)
+    profile_name = models.CharField(max_length=55)
+    age = models.IntegerField(null=True)
+    profile_pic = models.ImageField(upload_to='profile_image/', null=True)
+    
+    def __str__(self):
+        return self.name
 
 
 
@@ -151,10 +161,10 @@ class UserBookingHistory(models.Model):
     
     
     
-class RedeemRewardsModel(models.Model):
-    user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
-    reward = models.ForeignKey(Reward, on_delete=models.CASCADE)
-    redeemed_date = models.DateTimeField(null=True, blank=True)
+# class RedeemRewardsModel(models.Model):
+#     user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
+#     reward = models.ForeignKey(Reward, on_delete=models.CASCADE)
+#     redeemed_date = models.DateTimeField(null=True, blank=True)
 
-    def __str__(self) -> str:
-        return f'{self.user} has redeemed {self.reward} on {self.redeemed_date}'
+#     def __str__(self) -> str:
+#         return f'{self.user} has redeemed {self.reward} on {self.redeemed_date}'

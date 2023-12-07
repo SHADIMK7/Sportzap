@@ -161,10 +161,10 @@ class UserBookingHistory(models.Model):
     
     
     
-# class RedeemRewardsModel(models.Model):
-#     user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
-#     reward = models.ForeignKey(Reward, on_delete=models.CASCADE)
-#     redeemed_date = models.DateTimeField(null=True, blank=True)
+class RedeemRewardsModel(models.Model):
+    user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
+    reward = models.ForeignKey(Reward, on_delete=models.CASCADE)
+    redeemed_date = models.DateTimeField(null=True, blank=True)
 
-#     def __str__(self) -> str:
-#         return f'{self.user} has redeemed {self.reward} on {self.redeemed_date}'
+    def __str__(self) -> str:
+        return f'{self.user} has redeemed {self.reward} on {self.redeemed_date}'

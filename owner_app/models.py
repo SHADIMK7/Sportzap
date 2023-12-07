@@ -2,7 +2,8 @@ from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from user_app.models import *
-# from user_app.models import Customer, Team
+from admin_app.models import Reward
+from user_app.models import Team
 
 # Create your models here.
 
@@ -30,6 +31,7 @@ class Owner(models.Model):
 class Customer(models.Model):
     customer = models.ForeignKey(Abstract, on_delete=models.CASCADE)
     customer_name = models.CharField(max_length=100)
+    reward_points = models.IntegerField(default=0)
     
     def __str__(self):
         return self.customer_name
@@ -49,7 +51,7 @@ class Turf(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='image/') 
     description = models.CharField(max_length=255)
-    amenity = models.ManyToManyField(Amenity)
+    amenity = models.ManyToManyField('Amenity')
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
     # is_active = models.BooleanField(default=False)
@@ -61,6 +63,7 @@ PAYMENT_CHOICES = (
         ('Partial_payment', 'Partial_payment'),
         ('Full_payment', 'Full_payment')
     )
+
 class TurfBooking(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
     user_name = models.CharField(max_length=55)
@@ -84,15 +87,27 @@ class TurfBooking(models.Model):
 
     class Meta:
         unique_together = ['turf', 'date', 'start_time', 'end_time']
+    
+    # def save(self,*args, **kwargs):
+    #     super().save(*args, **kwargs)
+        
+    #     if self.is_match_ended():
+    #         reward_points = int(0.1 * self.price)
+    #         reward_point, created = RewardPointModel.objects.get_or_create(booking=self, defaults={'reward_points': reward_points})
+    #         if not created:
+    #             reward_point.reward_points = reward_points
+    #             reward_point.save()
+
 
 
 class PaymentHistoryModel(models.Model):
     turf_booking = models.ForeignKey(TurfBooking, on_delete=models.SET_NULL, null=True)
     turf = models.ForeignKey(Turf, on_delete=models.SET_NULL, null=True)
-    user = models.ForeignKey(Customer,on_delete=models.SET_NULL, null=True)
-    
+    user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
+
     def __str__(self):
-        return self.user.customer_name + "has booked " + self.turf.name 
+        return f'{self.user} has booked {self.turf}'
+        
 
 
 class MatchRatingModel(models.Model):
@@ -105,9 +120,19 @@ class MatchRatingModel(models.Model):
     date_played = models.DateField()
     turf = models.ForeignKey(Turf, on_delete=models.CASCADE)
 
-
+  
     def __str__(self):
         return f"{self.team1} {self.team1_score} : {self.team2} {self.team2_score}"
+    
+
+class RewardPointModel(models.Model):
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    booking = models.ForeignKey(TurfBooking, on_delete=models.CASCADE)
+    reward_points = models.IntegerField(default=0)
+    
+    def __str__(self) -> str:
+        return f'{self.booking.user_name} earned {self.reward_points}'
+    
     
 class Gallery(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
@@ -126,3 +151,20 @@ class Profile(models.Model):
     
     def __str__(self):
         return self.name
+
+
+
+class UserBookingHistory(models.Model):
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    turf_booked = models.ForeignKey(TurfBooking, on_delete=models.CASCADE)
+    
+    
+    
+    
+class RedeemRewardsModel(models.Model):
+    user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
+    reward = models.ForeignKey(Reward, on_delete=models.CASCADE)
+    redeemed_date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f'{self.user} has redeemed {self.reward} on {self.redeemed_date}'

@@ -11,7 +11,7 @@ class EmailOrUsernameModelBackend(ModelBackend):
             # If the username is not an email, try to get the user by username
             user = UserModel.objects.filter(phone_no=username).first()
 
-        if user.check_password(password):
-            return user
-        else:
-            return None
+            if user.check_password(password):
+                return user
+            else:
+                return None

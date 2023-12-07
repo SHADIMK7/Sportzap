@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from . models import *
 from owner_app . models import *
+from django.contrib.auth import get_user_model
+
 
 class AbstractSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,20 +67,28 @@ class PlayerSerializer(serializers.ModelSerializer):
 
         
 class TeamSerializer(serializers.ModelSerializer):
-    players = PlayerSerializer(many=True)
+    players = PlayerSerializer(many=True, required=False, read_only=True)
     
     class Meta:
         model = Team
         fields = '__all__'
         
+    def create(self, validated_data):
+        players_data = validated_data.pop('players', [])
+
+        # Assuming you have a Team model with a proper creation logic
+        team_instance = Team.objects.create(**validated_data)
+
+        for player_data in players_data:
+            Player.objects.create(team=team_instance, **player_data)
+
+        return team_instance
+        
     def update(self, instance, validated_data):
         players_data = validated_data.pop('players', [])
-        
         max_players = instance.team_strength if instance else self.Meta.model.team_strength_limit
-
         if len(instance.players.all()) + len(players_data) > max_players:
             raise serializers.ValidationError(f'Team can have at most {max_players} players.')
-
         instance = super().update(instance, validated_data)
 
         for player_data in players_data:
@@ -87,5 +97,31 @@ class TeamSerializer(serializers.ModelSerializer):
                 PlayerSerializer().update(player_instance, player_data)
             else:
                 instance.players.create(**player_data)
-
         return instance
+    
+    
+class GallerySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Gallery
+        fields = '__all__'
+  
+  
+        
+User = get_user_model()      
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['phone_no', 'email']
+        
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['profile_name', 'age', 'profile_pic']
+        
+class ProfileCombinedSerializer(serializers.Serializer):
+    abstract = UserProfileSerializer()
+    profile = ProfileSerializer()
+    
+class InvitationSerializer(serializers.Serializer):
+    team_id = serializers.IntegerField()
+    player_id = serializers.IntegerField()

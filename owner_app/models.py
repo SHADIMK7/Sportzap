@@ -116,3 +116,13 @@ class Gallery(models.Model):
     
     def __str__(self):
         return self.description
+    
+    
+class Profile(models.Model):
+    user = models.ForeignKey(Abstract, on_delete=models.CASCADE)
+    profile_name = models.CharField(max_length=55)
+    age = models.IntegerField(null=True)
+    profile_pic = models.ImageField(upload_to='profile_image/', null=True)
+    
+    def __str__(self):
+        return self.name

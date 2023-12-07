@@ -406,3 +406,64 @@ class AcceptInvitationView(generics.RetrieveUpdateAPIView):
             return Response({'detail': 'Invitation accepted successfully'}, status=status.HTTP_200_OK)
         else:
             return Response({'detail': 'No pending invitation for this player'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+class RewardPoints(generics.ListAPIView):
+    serializer_class = RewardPointSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return RewardPointModel.objects.filter(booking_user_pk=pk)
+    
+    def list(self,request , *args, **kwargs):
+        user = self.kwargs['pk']
+        reward_points = RewardPointModel.objects.filter(booking_user_pk=user).aggregate(total_points=models.Sum('reward_points'))
+        
+        if not reward_points['total_points']:
+            total_points = 0
+        else:
+            total_points = reward_points['total_points']
+            
+        response_data = {
+            'user': user,
+            'total_points': total_points,
+            'reward_points': self.serializer_class(self.get_queryset(), many=True).data
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    
+    
+class UserBookingHistoryView(generics.ListAPIView):
+    serializer_class = UserBookingHistorySerializer
+
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return UserBookingHistory.objects.filter(user=pk)
+    
+    
+# class RedeemRewards(generics.CreateAPIView):
+#     serializer_class = RedeemRewardsSerializer
+
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+        
+#         user = serializer.validated_data['user']
+#         reward = serializer.validated_data.get('reward') 
+
+#         if not reward or user.reward_points < reward.reward_points:
+#             return Response({'status': "failed",'message': 'Not enough reward points or invalid reward','response_code':status.HTTP_400_BAD_REQUEST})
+
+#         instance = serializer.save(redeemed_date=timezone.now())
+
+#         user.reward_points -= reward.reward_points
+#         user.save()
+#         response_data = {
+#                         'user': user.customer.username,
+#                         'redeemed_reward': reward.reward_name,
+#                         'redeemed_date': instance.redeemed_date if instance else None,
+#                         'remaining_points': user.reward_points,
+#                         }
+
+#         return Response({'status':"success",'message': "Reward redeemed successfully","data":response_data,'response_code': status.HTTP_201_CREATED,})

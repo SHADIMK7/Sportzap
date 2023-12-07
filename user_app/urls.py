@@ -18,13 +18,7 @@ urlpatterns = [
     path('profile/', ProfileUpdateView.as_view(), name='profile'),
     path('send_invitation/', SendInvitationView.as_view(), name='send_invitation'),
     path('accept_invitation/<int:pk>/', AcceptInvitationView.as_view(), name='accept_invitation'),
-
-
-    
-    
-    # path('booking-history/<int:pk>/', UserBookingHistoryView.as_view(), name="booking-history"),
-    # path('redeem-rewards/<int:pk>/', RedeemRewards.as_view(), name='redeem-rewards')
     path('booking-history/<int:pk>/', UserBookingHistoryView.as_view(), name="booking-history"),
-    path('redeem-rewards/<int:pk>/', RedeemRewards.as_view(), name='redeem-rewards'),
+    # path('redeem-rewards/<int:pk>/', RedeemRewards.as_view(), name='redeem-rewards'),
     
 ]

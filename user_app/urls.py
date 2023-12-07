@@ -24,4 +24,7 @@ urlpatterns = [
     
     # path('booking-history/<int:pk>/', UserBookingHistoryView.as_view(), name="booking-history"),
     # path('redeem-rewards/<int:pk>/', RedeemRewards.as_view(), name='redeem-rewards')
+    path('booking-history/<int:pk>/', UserBookingHistoryView.as_view(), name="booking-history"),
+    path('redeem-rewards/<int:pk>/', RedeemRewards.as_view(), name='redeem-rewards'),
+    
 ]

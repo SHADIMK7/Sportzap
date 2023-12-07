@@ -38,8 +38,13 @@ class Player(models.Model):
     player_pic = models.ImageField(upload_to='player_image/', null=True)
     player_position = models.CharField(max_length=10)
     team = models.ForeignKey('Team', related_name='players', on_delete=models.SET_NULL, null=True)
+    invitation_pending = models.BooleanField(default=False) 
     
     def __str__(self):
         return self.player_name
     
 
+# class RewardPoints(models.Model):
+#     user = models.ForeignKey(Customer,on_delete=models.CASCADE)
+    
+    

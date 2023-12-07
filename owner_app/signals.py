@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from .models import TurfBooking, RewardPointModel, PaymentHistoryModel, UserBookingHistory, RedeemRewardsModel, Customer
+from .models import TurfBooking, RewardPointModel, PaymentHistoryModel, UserBookingHistory, Customer
 from django.db import transaction
 
 

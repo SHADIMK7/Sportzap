@@ -257,3 +257,39 @@ class RewardPoints(generics.ListAPIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+    
+    
+    
+class UserBookingHistoryView(generics.ListAPIView):
+    serializer_class = UserBookingHistorySerializer
+
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return UserBookingHistory.objects.filter(user=pk)
+    
+    
+class RedeemRewards(generics.CreateAPIView):
+    serializer_class = RedeemRewardsSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        user = serializer.validated_data['user']
+        reward = serializer.validated_data.get('reward') 
+
+        if not reward or user.reward_points < reward.reward_points:
+            return Response({'status': "failed",'message': 'Not enough reward points or invalid reward','response_code':status.HTTP_400_BAD_REQUEST})
+
+        instance = serializer.save(redeemed_date=timezone.now())
+
+        user.reward_points -= reward.reward_points
+        user.save()
+        response_data = {
+                        'user': user.customer.username,
+                        'redeemed_reward': reward.reward_name,
+                        'redeemed_date': instance.redeemed_date if instance else None,
+                        'remaining_points': user.reward_points,
+                        }
+
+        return Response({'status':"success",'message': "Reward redeemed successfully","data":response_data,'response_code': status.HTTP_201_CREATED,})

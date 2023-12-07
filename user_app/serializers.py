@@ -92,12 +92,12 @@ class TeamSerializer(serializers.ModelSerializer):
     
     
 class RewardPointSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField
-    reward_points = serializers.SerializerMethodField
+    # user = serializers.SerializerMethodField
+    # reward_points = serializers.SerializerMethodField
     
     class Meta:
         model = RewardPointModel
-        fields = ['booking', 'reward_points']
+        fields = ['user' ,'booking', 'reward_points']
         
     # def get_user(self,request):
     #     return self.booking.user
@@ -106,3 +106,59 @@ class RewardPointSerializer(serializers.ModelSerializer):
     #     if self.booking.is_match_ended == "True":
     #         reward_points = reward_points + 10/100 * (self.booking.price)
     #         return reward_points
+    
+    
+class UserBookingHistorySerializer(serializers.ModelSerializer):
+    user_name = serializers.SerializerMethodField()
+    date_booked = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+    amount_paid = serializers.SerializerMethodField()
+    balance = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserBookingHistory
+        fields = ['user', 'turf_booked', 'user_name', 'date_booked', 'price','amount_paid', 'balance']
+        
+    def get_user_name(self,object):
+        return object.user.customer_name    
+    
+    def get_date_booked(self,object):
+        return object.turf_booked.date
+    
+    def get_price(self,object):
+        return object.turf_booked.price
+    
+    def get_amount_paid(self,object):
+        return object.turf_booked.amount_paid
+    
+    def get_balance(self,object):
+        return object.turf_booked.balance
+    
+    
+
+class RedeemRewardsSerializer(serializers.ModelSerializer):
+    required_points = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = RedeemRewardsModel
+        fields = ['user', 'required_points', 'reward']
+    
+    def get_required_points(self, object):
+        # Check if 'object' is an instance of RedeemRewardsModel
+        if isinstance(object, RedeemRewardsModel):
+            return object.reward.reward_points
+        # Check if 'object' is an instance of dict
+        elif isinstance(object, dict) and 'reward' in object:
+            # Handle the case when 'object' is a dictionary with 'reward'
+            return object['reward'].reward_points
+        return None 
+
+# class UserReviewSerializer(serializers.ModelSerializer):
+#     user = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = UserReviewModel
+#         fields = ['user', 'review', 'sentiment']
+
+#     def get_user(self, obj):
+#         return obj.user.id

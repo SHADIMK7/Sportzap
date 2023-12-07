@@ -5,7 +5,37 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 from user_app.models import *
+from rest_framework.authtoken.views import ObtainAuthToken
+from django.contrib.auth import authenticate
+
 # Create your views here.
+
+
+
+class CustomLoginView(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response({'error': 'Both username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Use the custom authentication backend
+        user = authenticate(request, username=username, password=password)
+
+        if user:
+            token, created = Token.objects.get_or_create(user=user)
+            user_type = user.usertype
+
+            response_data = {
+                'token': token.key,
+                'user_type': user_type,
+                'is_admin': user.is_superuser,
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class Registration(generics.CreateAPIView):

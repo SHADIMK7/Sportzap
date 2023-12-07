@@ -267,27 +267,29 @@ class UserBookingHistoryView(generics.ListAPIView):
         pk = self.kwargs['pk']
         return UserBookingHistory.objects.filter(user=pk)
     
-
     
-# class UserReview(generics.ListCreateAPIView):
-#     serializer_class = UserReviewSerializer
+class RedeemRewards(generics.CreateAPIView):
+    serializer_class = RedeemRewardsSerializer
 
-#     def get_queryset(self):
-#         pk = self.kwargs['pk']
-#         return UserReviewModel.objects.filter(user=pk)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        user = serializer.validated_data['user']
+        reward = serializer.validated_data.get('reward') 
 
-#     def perform_create(self, serializer):
-#         pk = self.kwargs['pk']  
-#         customer_instance = Customer.objects.get(id=pk)
-#         serializer.save(user=customer_instance)
-    
-#     def create(self, request, *args, **kwargs):
-#         response =  super().create(request, *args, **kwargs)
-#         data = {
-#             'status': "success",
-#             "message" : "User has reviewed successfully",
-#             "response_code" : status.HTTP_201_CREATED,
-#             "data": response.data,
-#         }
-#         return Response(data)
-    
+        if not reward or user.reward_points < reward.reward_points:
+            return Response({'status': "failed",'message': 'Not enough reward points or invalid reward','response_code':status.HTTP_400_BAD_REQUEST})
+
+        instance = serializer.save(redeemed_date=timezone.now())
+
+        user.reward_points -= reward.reward_points
+        user.save()
+        response_data = {
+                        'user': user.customer.username,
+                        'redeemed_reward': reward.reward_name,
+                        'redeemed_date': instance.redeemed_date if instance else None,
+                        'remaining_points': user.reward_points,
+                        }
+
+        return Response({'status':"success",'message': "Reward redeemed successfully","data":response_data,'response_code': status.HTTP_201_CREATED,})

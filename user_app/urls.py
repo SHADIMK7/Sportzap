@@ -15,5 +15,5 @@ urlpatterns = [
     path('rewards/<int:pk>/', RewardPoints.as_view(), name='rewards'),
     path('player/<int:name>/', PlayerDetail.as_view(), name='player_detail'),
     path('booking-history/<int:pk>/', UserBookingHistoryView.as_view(), name="booking-history"),
-    # path('user-review/<int:pk>/', UserReview.as_view(), name='user-review'),
+    path('redeem-rewards/<int:pk>/', RedeemRewards.as_view(), name='redeem-rewards')
 ]

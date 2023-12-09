@@ -9,11 +9,6 @@ from django.db import transaction
 def create_balance(sender, instance , **kwargs):
     print("BALANCE STARTED")
     instance.balance = instance.price - instance.amount_paid
-    
-    
-# "http://1800:/analyse"
-
-# response 
 
 
   
@@ -54,3 +49,19 @@ def create_user_booking_history(sender, instance, created, **kwargs):
             turf_booked = instance,
             user = instance.user
         )
+
+# @receiver(post_save, sender=Turf)
+# def update_turf_price(sender, instance, **kwargs):
+#     if not kwargs.get('created'):
+#         TurfPriceUpdateModel.objects.create(
+#             turf = instance,
+#             old_price = instance.price
+#         )
+#         print("NOT KWARGS")
+#         if instance.price != TurfPriceUpdateModel.new_price:
+#             TurfPriceUpdateModel.objects.create(
+#                 turf = instance,
+#                 old_price = instance.price,
+#                 new_price = instance.price                
+#             )
+#             print("2nd if ")

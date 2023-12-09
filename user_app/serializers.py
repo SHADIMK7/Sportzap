@@ -63,7 +63,7 @@ class TurfDisplaySerializer(serializers.ModelSerializer):
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
-        fields = '__all__'
+        fields = ['player_name', 'player_skill', 'player_pic', 'player_position']
 
         
 class TeamSerializer(serializers.ModelSerializer):
@@ -73,31 +73,37 @@ class TeamSerializer(serializers.ModelSerializer):
         model = Team
         fields = '__all__'
         
-    def create(self, validated_data):
-        players_data = validated_data.pop('players', [])
+class TeamInvitationSerializer(serializers.ModelSerializer):
 
-        # Assuming you have a Team model with a proper creation logic
-        team_instance = Team.objects.create(**validated_data)
-
-        for player_data in players_data:
-            Player.objects.create(team=team_instance, **player_data)
-
-        return team_instance
+    class Meta:
+        model = TeamInvitation
+        fields = '__all__'
         
-    def update(self, instance, validated_data):
-        players_data = validated_data.pop('players', [])
-        max_players = instance.team_strength if instance else self.Meta.model.team_strength_limit
-        if len(instance.players.all()) + len(players_data) > max_players:
-            raise serializers.ValidationError(f'Team can have at most {max_players} players.')
-        instance = super().update(instance, validated_data)
+    # def create(self, validated_data):
+    #     players_data = validated_data.pop('players', [])
 
-        for player_data in players_data:
-            player_instance = instance.players.filter(id=player_data.get('id')).first()
-            if player_instance:
-                PlayerSerializer().update(player_instance, player_data)
-            else:
-                instance.players.create(**player_data)
-        return instance
+    #     # Assuming you have a Team model with a proper creation logic
+    #     team_instance = Team.objects.create(**validated_data)
+
+    #     for player_data in players_data:
+    #         Player.objects.create(team=team_instance, **player_data)
+
+    #     return team_instance
+        
+    # def update(self, instance, validated_data):
+    #     players_data = validated_data.pop('players', [])
+    #     max_players = instance.team_strength if instance else self.Meta.model.team_strength_limit
+    #     if len(instance.players.all()) + len(players_data) > max_players:
+    #         raise serializers.ValidationError(f'Team can have at most {max_players} players.')
+    #     instance = super().update(instance, validated_data)
+
+    #     for player_data in players_data:
+    #         player_instance = instance.players.filter(id=player_data.get('id')).first()
+    #         if player_instance:
+    #             PlayerSerializer().update(player_instance, player_data)
+    #         else:
+    #             instance.players.create(**player_data)
+    #     return instance
     
     
 class RewardPointSerializer(serializers.ModelSerializer):
@@ -189,12 +195,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['profile_name', 'age', 'profile_pic']
+        fields = ['profile_name', 'profile_pic']
         
 class ProfileCombinedSerializer(serializers.Serializer):
     abstract = UserProfileSerializer()
     profile = ProfileSerializer()
     
-class InvitationSerializer(serializers.Serializer):
-    team_id = serializers.IntegerField()
-    player_id = serializers.IntegerField()

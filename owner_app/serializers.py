@@ -126,3 +126,29 @@ class MatchRatingSerializer(serializers.ModelSerializer):
         turf_booking = instance.turf_booking
         return turf_booking.is_match_ended()
     
+    def create(self, validated_data):
+        team1 = validated_data['team1']
+        team2 = validated_data['team2']
+        team1_score = validated_data['team1_score']
+        team2_score = validated_data['team2_score']
+
+        # Determine the winning team
+        winner = None
+        if team1_score > team2_score:
+            winner = team1
+        elif team1_score < team2_score:
+            winner = team2
+
+        # Create a list of player data with win status
+        team1_players_data = [{'id': player.id, 'name': player.player_name, 'win': team1 == winner} for player in team1.players.all()]
+        team2_players_data = [{'id': player.id, 'name': player.player_name, 'win': team2 == winner} for player in team2.players.all()]
+
+        validated_data['players_data'] = {
+            'team1_players': team1_players_data,
+            'team2_players': team2_players_data,
+        }
+
+        instance = super().create(validated_data)
+        return instance
+
+    

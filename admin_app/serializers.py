@@ -5,12 +5,13 @@ from django.contrib.auth import get_user_model
 from admin_app.models import Leaderboard,Reward
 
 
-class TurfSerializer(serializers.ModelSerializer):
 
+class TurfSerializer(serializers.ModelSerializer):
+    amenity_names = serializers.StringRelatedField(many=True, source='amenity')
+    owner_name = serializers.StringRelatedField(source='owner.abstract')
     class Meta:
         model = Turf
-        fields = '__all__'
-
+        fields = ['id','amenity_names','name','location','price','image','description','owner_name']
 
 
 class AbstractUserSerializer(serializers.ModelSerializer):
@@ -22,20 +23,28 @@ class AbstractUserSerializer(serializers.ModelSerializer):
 
 class OwnerSerializer(serializers.ModelSerializer):
 
-    # abstract_user_details = AbstractUserSerializer(source='abstract', read_only=True)
-    turf = serializers.SerializerMethodField()
     name = serializers.StringRelatedField(source='abstract.first_name')
     email = serializers.StringRelatedField(source='abstract.email')
     phone = serializers.StringRelatedField(source='abstract.phone_no')
+    
     class Meta:
         model = Owner
-        fields = ['id',  'turf','Organization_name','name','email','phone',  'turf']
+        fields = ['id','Organization_name','name','email','phone']
 
+    
+class OwnerTurfSerializer(serializers.ModelSerializer):
+    turf = serializers.SerializerMethodField()
+    # amenity_name = serializers.StringRelatedField(source='amenity.name')
+
+    class Meta:
+        model = Owner
+        fields = ['id', 'turf']
+    
     def get_turf(self, owner):
         turfs = owner.turf_set.all()
         turf_serializer = TurfSerializer(turfs, many=True)
-        return turf_serializer.data
-
+        return turf_serializer.data    
+    
 class CustomerListSerializer(serializers.ModelSerializer):
 
     abstract_user_details = AbstractUserSerializer(source='customer', read_only=True)
@@ -50,10 +59,21 @@ class CustomerListSerializer(serializers.ModelSerializer):
     
     
 class BookingSerializer(serializers.ModelSerializer):
+    turf_name = serializers.StringRelatedField(source='turf.name')
+
     class Meta:
         model = TurfBooking
         fields = '__all__'
 
+from django.db.models import Count, Sum
+
+class BookingDateSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    turf = serializers.IntegerField()
+    total_bookings = serializers.IntegerField()
+    total_earnings = serializers.IntegerField()
+
+   
 class TransactionHistorySerializer(serializers.ModelSerializer):
     user_name = serializers.StringRelatedField(source='user.first_name')
     turf_name = serializers.StringRelatedField(source='turf.name')
@@ -133,3 +153,8 @@ class RewardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reward
         fields = '__all__'        
+
+class CustomerLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Abstract
+        fields = ['latitude', 'longitude']        

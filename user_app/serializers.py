@@ -153,12 +153,9 @@ class RedeemRewardsSerializer(serializers.ModelSerializer):
         fields = ['user', 'required_points', 'reward']
     
     def get_required_points(self, object):
-        # Check if 'object' is an instance of RedeemRewardsModel
         if isinstance(object, RedeemRewardsModel):
             return object.reward.reward_points
-        # Check if 'object' is an instance of dict
         elif isinstance(object, dict) and 'reward' in object:
-            # Handle the case when 'object' is a dictionary with 'reward'
             return object['reward'].reward_points
         return None 
 

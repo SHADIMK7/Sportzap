@@ -58,6 +58,13 @@ class Turf(models.Model):
 
     def __str__(self):
         return f' {self.name} ({self.owner.Organization_name})'  
+    
+    
+# class TurfPriceUpdateModel(models.Model):
+#     turf = models.ForeignKey(Turf, on_delete=models.CASCADE)
+#     old_price = models.DecimalField(default=0, max_digits=10,decimal_places=2)
+#     new_price = models.DecimalField(null=True, max_digits=10,decimal_places=2)
+    
 
 PAYMENT_CHOICES = (
         ('Partial_payment', 'Partial_payment'),

@@ -7,6 +7,10 @@ from rest_framework import status
 from user_app.models import *
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import authenticate
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from .permissions import IsOwnerOnly
+
 
 # Create your views here.
 
@@ -20,7 +24,6 @@ class CustomLoginView(ObtainAuthToken):
         if not username or not password:
             return Response({'error': 'Both username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Use the custom authentication backend
         user = authenticate(request, username=username, password=password)
 
         if user:
@@ -65,6 +68,8 @@ class Registration(generics.CreateAPIView):
     
     
 class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsOwnerOnly]
     # queryset = Turf.objects.all()
     serializer_class = TurfSerializer
     
@@ -77,23 +82,13 @@ class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
         serializer = self.serializer_class(data=request.data, context={'owner_pk': pk})
         if serializer.is_valid():
             d = serializer.save()
-            data = {
-                "message": "turf created successfully",
-                "owner" : d.owner.pk,
-                "turf name": d.name,
-                "location" : d.location,
-                "price" : d.price,
-                # "image" : d.image,
-                "description" : d.description,
-                # "amenity" : d.amenity.name,
-                "latitude" : d.latitude,
-                "longitude" : d.longitude
-            }
-            return Response({'status':"success",'message': data,'response_code': status.HTTP_201_CREATED,})
+            response = TurfSerializer(d)
+            return Response({'status': "success", 'message': response.data, 'response_code': status.HTTP_201_CREATED})
         else:
-            return Response(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
+    
     serializer_class = TurfSerializer
     
     def get_queryset(self):
@@ -107,23 +102,25 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        
+        response = TurfSerializer(instance)
 
-        updated_data = {
-            'owner': instance.owner,
-            'name': serializer.validated_data.get('name', instance.name),
-            'location': serializer.validated_data.get('location', instance.location),
-            'price': serializer.validated_data.get('price', instance.price),
-            'image': serializer.validated_data.get('image', instance.image),
-            'description': serializer.validated_data.get('description', instance.description),
-            'amenity': [amenity.name for amenity in serializer.validated_data.get('amenity', instance.amenity.all())],
-            'latitude': serializer.validated_data.get('latitude', instance.latitude),
-            'longitude': serializer.validated_data.get('longitude', instance.longitude),
-        }
+        # updated_data = {
+        #     'owner': instance.owner,
+        #     'name': serializer.validated_data.get('name', instance.name),
+        #     'location': serializer.validated_data.get('location', instance.location),
+        #     'price': serializer.validated_data.get('price', instance.price),
+        #     'image': serializer.validated_data.get('image', instance.image),
+        #     'description': serializer.validated_data.get('description', instance.description),
+        #     'amenity': [amenity.name for amenity in serializer.validated_data.get('amenity', instance.amenity.all())],
+        #     'latitude': serializer.validated_data.get('latitude', instance.latitude),
+        #     'longitude': serializer.validated_data.get('longitude', instance.longitude),
+        # }
 
         return Response({
             'status': "success",
             'message': "Turf updated successfully",
-            'data': updated_data,
+            'data': response.data,
             'response_code': status.HTTP_200_OK,
         })
     
@@ -133,6 +130,18 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
         return Response({'status':"success",'message': "Turf deleted successfully",'response_code': status.HTTP_200_OK,})
 
 
+# class TurfPriceUpdate(generics.ListAPIView):
+#     serializer_class = TurfPriceUpdateSerializer
+
+#     def get_queryset(self):
+#         pk = self.kwargs['pk']
+#         return TurfPriceUpdateModel.objects.filter(turf__owner=pk)
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = TurfPriceUpdateSerializer(queryset, context={'owner_id': self.kwargs['pk']}, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+    
     
 class PaymentHistory(generics.ListAPIView):
     # queryset = PaymentHistoryModel.objects.all()
@@ -140,7 +149,7 @@ class PaymentHistory(generics.ListAPIView):
     
     def get_queryset(self):
         pk = self.kwargs['pk']
-        return PaymentHistoryModel.objects.filter(turf__pk=pk)
+        return PaymentHistoryModel.objects.filter(turf__owner__pk=pk)
     
     # def get(self,request,*args, **kwargs):
     #     PaymentHistoryModel.objects.filter(turf__pk=kwargs['pk'])

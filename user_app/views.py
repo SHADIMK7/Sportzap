@@ -1,15 +1,16 @@
 from django.shortcuts import render
-from rest_framework import generics, status, mixins
+from rest_framework import generics, status ,mixins, permissions
 from . models import *
 from . serializers import *
 from owner_app.models import *
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from geopy.distance import distance
 from rest_framework .authtoken.models import Token
 from . help import *
 
 # Create your views here.
-class CustomerRegistrationView(mixins.CreateModelMixin, generics.GenericAPIView):
+class CustomerRegistrationView(generics.CreateAPIView):
     serializer_class = RegisterUserSerializer
 
     def post(self, request):
@@ -62,6 +63,21 @@ class BookingView(generics.ListCreateAPIView):
     queryset = TurfBooking.objects.all()
     serializer_class = TurfBookingSerializer
     
+    def post(self, request):
+        serializer = TurfBookingSerializer(data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'status': "success",
+                            'message': "Booking successful",
+                            'response_code': status.HTTP_200_OK,
+                            'data': serializer.data})
+        else:
+            data = serializer.errors
+            return Response({'status': "error",
+                            'message': "Registration unsuccessful",
+                            'response_code': status.HTTP_403_FORBIDDEN,
+                            'data':data}) 
+    
     
     
 # class TurfDisplayView(generics.ListAPIView):
@@ -87,6 +103,22 @@ class TeamView(generics.ListCreateAPIView):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
     
+    def post(self, request):
+        serializer = TeamSerializer(data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'status': "success",
+                            'message': "Team adding Successful",
+                            'response_code': status.HTTP_200_OK,
+                            'data': serializer.data})
+        else:
+            data = serializer.errors
+            return Response({'status': "error",
+                            'message': "Team adding failed",
+                            'response_code': status.HTTP_404_NOT_FOUND, 
+                            'data': data})
+        
+    
 class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
@@ -101,9 +133,11 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
                             'response_code': status.HTTP_200_OK,
                             'data': serializer.data})
         else:
+            data = serializer.errors
             return Response({'status': "error",
-                            'message': "not found",
-                            'response_code': status.HTTP_404_NOT_FOUND})
+                            'message': "Team fetching unsuccessful",
+                            'response_code': status.HTTP_404_NOT_FOUND,
+                            'data': data})
         
     def put(self, request, name):
         self.queryset = self.queryset.filter(id = name).first()
@@ -117,13 +151,17 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
                                 'response_code': status.HTTP_200_OK,
                                 'data': serializer.data})
             else:
+                data = serializer.errors
                 return Response({'status': "error",
                                 'message': "updation unsuccessful",
-                                'response_code': status.HTTP_403_FORBIDDEN})
+                                'response_code': status.HTTP_403_FORBIDDEN,
+                                'data': data})
         else:
+            data = serializer.errors
             return Response({'status': "error",
                             'message': "not found",
-                            'response_code': status.HTTP_404_NOT_FOUND})
+                            'response_code': status.HTTP_404_NOT_FOUND,
+                            'data': data})
         
     def delete(self, request, name):
         self.queryset = self.queryset.filter(id = name).first()
@@ -176,7 +214,8 @@ class PlayerView(generics.ListCreateAPIView):
                         'status': "success",
                         'message': 'Player added successfully',
                         'response_code': status.HTTP_200_OK,
-                        'team_strength': team_strength
+                        'team_strength': team_strength,
+                        'data': serializer.data
                     }
                     Response(response_data)
             else:
@@ -185,7 +224,7 @@ class PlayerView(generics.ListCreateAPIView):
                 #                 'response_code': status.HTTP_404_NOT_FOUND})
                 response_data = {
                         'status': "error",
-                        'message': 'not found',
+                        'message': 'Team not found',
                         'response_code': status.HTTP_404_NOT_FOUND
                         }
                 raise serializers.ValidationError(response_data)
@@ -208,8 +247,11 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
             serializer = self.get_serializer(self.queryset)
             return Response({'data': serializer.data})
         else:
-            return Response({'error': 'not found'},
-                            status=status.HTTP_403_FORBIDDEN)
+            data = serializer.errors
+            return Response({'status': "error",
+                            'message': "Unable to get player",
+                            'response_code': status.HTTP_403_FORBIDDEN,
+                            'data': data})
         
     def put(self, request, name):
         self.queryset = self.queryset.filter(id = name).first()
@@ -221,8 +263,11 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
                              'response_code': status.HTTP_200_OK,
                              'data': serializer.data})
         else:
-            return Response({'error': 'not updated'},
-                            status=status.HTTP_403_FORBIDDEN)
+            data = serializer.errors
+            return Response({'status': "error",
+                                'message': "updation unsuccessful",
+                                'response_code': status.HTTP_403_FORBIDDEN,
+                                'data': data})
             
         
     def delete(self,request,name):
@@ -231,19 +276,148 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
         return Response({'status': "success",
                          'message': "deleted successfully",
                          'response_code': status.HTTP_204_NO_CONTENT})
+        
+        
+        
+class GalleryView(generics.ListCreateAPIView):
+    queryset = Gallery.objects.all()
+    serializer_class = GallerySerializer
+    # permission_classes = [permissions.IsAuthenticated]
     
+    def get(self, request):
+        gallery = Gallery.objects.all()
+        serializers = GallerySerializer(gallery, many=True)
+        return Response(serializers.data)
+    
+    def post(self,request):
+        serializer = GallerySerializer(data=request.data)
+        if serializer.is_valid():
+            # serializer.validated_data['user'] = request.user
+            serializer.save()
+            print(request.user)
+            return Response({'status': "success",
+                             'message': "Image uploaded successfully",
+                             'response_code': status.HTTP_200_OK})
+        else: 
+            data = serializer.errors
+            return Response({'status': "error",
+                            'message': "Image uploading unsuccessful",
+                            'response_code': status.HTTP_200_OK,
+                            'data': data})
+            
+        
+class ProfileUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        user = request.user
+
+        # Retrieve Abstract and Profile instances
+        abstract_instance = Abstract.objects.get(pk=user.pk)
+        profile_instance = Profile.objects.get(user=user)
+
+        # Serialize Abstract and Profile instances
+        abstract_serializer = AbstractSerializer(abstract_instance)
+        profile_serializer = ProfileSerializer(profile_instance)
+        return Response({'status': "success",
+                        'message': "PRofile fetching Successful",
+                        'response_code': status.HTTP_200_OK,
+                        'abstract': abstract_serializer.data,
+                        'profile': profile_serializer.data})
+
+    def put(self, request, *args, **kwargs):
+        user = request.user
+
+        # Get or create Abstract instance
+        abstract_instance, created = Abstract.objects.get_or_create(pk=user.pk, defaults={'user': user})
+
+        serializer = ProfileCombinedSerializer(data=request.data)
+        if serializer.is_valid():
+            abstract_data = serializer.validated_data.get('abstract', {})
+            profile_data = serializer.validated_data.get('profile', {})
+
+            Abstract.objects.update_or_create(pk=abstract_instance.pk, defaults=abstract_data)
+            Profile.objects.update_or_create(user=user, defaults=profile_data)
+
+            return Response({'status': "success",
+                            'message': "Profile updating Successful",
+                            'response_code': status.HTTP_200_OK,
+                            'data': serializer.data})
+        else:
+            data = serializer.errors
+            return Response({'status': "error",
+                            'message': "Profile updating unsuccessful",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': data})
+            
+            
+class SendInvitationView(generics.CreateAPIView):
+    serializer_class = InvitationSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        team_id = serializer.validated_data['team_id']
+        player_id = serializer.validated_data['player_id']
+
+        try:
+            team = Team.objects.get(id=team_id)
+            player = Player.objects.get(id=player_id)
+        except (Team.DoesNotExist, Player.DoesNotExist):
+            return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if team.players.count() < team.team_strength:
+            # Assuming you have a field in your Player model to track invitations
+            player.invitation_pending = True
+            player.save()
+
+            # You might want to send a notification to the player here
+
+            return Response({'detail': 'Invitation sent successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'detail': 'Team is already full'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class AcceptInvitationView(generics.RetrieveUpdateAPIView):
+    serializer_class = PlayerSerializer
+    
+    def get_object(self):
+        player_id = self.kwargs.get('pk')
+        try:
+            return Player.objects.get(id=player_id)
+        except Player.DoesNotExist:
+            return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        print(instance)
+        team = request.data.get('team')
+        print(team)
+        print(request.data)
+
+        if instance.invitation_pending:
+            instance.team = Team.objects.get(id=team)
+            instance.invitation_pending = False
+            instance.save()
+
+            # You might want to send a notification to the team that the player has accepted the invitation
+
+            return Response({'detail': 'Invitation accepted successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'detail': 'No pending invitation for this player'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
 class RewardPoints(generics.ListAPIView):
     serializer_class = RewardPointSerializer
     
     def get_queryset(self):
         pk = self.kwargs['pk']
-        return RewardPointModel.objects.filter(booking__user__pk=pk)
+        return RewardPointModel.objects.filter(booking_user_pk=pk)
     
     def list(self,request , *args, **kwargs):
         user = self.kwargs['pk']
-        reward_points = RewardPointModel.objects.filter(booking__user__pk=user).aggregate(total_points=models.Sum('reward_points'))
+        reward_points = RewardPointModel.objects.filter(booking_user_pk=user).aggregate(total_points=models.Sum('reward_points'))
         
         if not reward_points['total_points']:
             total_points = 0
@@ -257,3 +431,39 @@ class RewardPoints(generics.ListAPIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+    
+    
+    
+class UserBookingHistoryView(generics.ListAPIView):
+    serializer_class = UserBookingHistorySerializer
+
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return UserBookingHistory.objects.filter(user=pk)
+    
+    
+class RedeemRewards(generics.CreateAPIView):
+    serializer_class = RedeemRewardsSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        user = serializer.validated_data['user']
+        reward = serializer.validated_data.get('reward') 
+
+        if not reward or user.reward_points < reward.reward_points:
+            return Response({'status': "failed",'message': 'Not enough reward points or invalid reward','response_code':status.HTTP_400_BAD_REQUEST})
+
+        instance = serializer.save(redeemed_date=timezone.now())
+
+        user.reward_points -= reward.reward_points
+        user.save()
+        response_data = {
+                        'user': user.customer.username,
+                        'redeemed_reward': reward.reward_name,
+                        'redeemed_date': instance.redeemed_date if instance else None,
+                        'remaining_points': user.reward_points,
+                        }
+
+        return Response({'status':"success",'message': "Reward redeemed successfully","data":response_data,'response_code': status.HTTP_201_CREATED,})

@@ -1,9 +1,10 @@
 from django.db import models
 from user_app.models import Team
-from owner_app.models import MatchRatingModel
+# from owner_app.models import MatchRatingModel
 # Create your models here.
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+# from owner_app.models import Customer
 
 
 

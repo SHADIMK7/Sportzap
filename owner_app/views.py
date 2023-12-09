@@ -5,7 +5,37 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 from user_app.models import *
+from rest_framework.authtoken.views import ObtainAuthToken
+from django.contrib.auth import authenticate
+
 # Create your views here.
+
+
+
+class CustomLoginView(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response({'error': 'Both username and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Use the custom authentication backend
+        user = authenticate(request, username=username, password=password)
+
+        if user:
+            token, created = Token.objects.get_or_create(user=user)
+            user_type = user.usertype
+
+            response_data = {
+                'token': token.key,
+                'user_type': user_type,
+                'is_admin': user.is_superuser,
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class Registration(generics.CreateAPIView):
@@ -49,7 +79,15 @@ class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
             d = serializer.save()
             data = {
                 "message": "turf created successfully",
-                "turf name": d.name
+                "owner" : d.owner.pk,
+                "turf name": d.name,
+                "location" : d.location,
+                "price" : d.price,
+                # "image" : d.image,
+                "description" : d.description,
+                # "amenity" : d.amenity.name,
+                "latitude" : d.latitude,
+                "longitude" : d.longitude
             }
             return Response({'status':"success",'message': data,'response_code': status.HTTP_201_CREATED,})
         else:
@@ -62,6 +100,33 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
         pk = self.kwargs['pk']
         return Turf.objects.filter(pk=pk)
     
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        updated_data = {
+            'owner': instance.owner,
+            'name': serializer.validated_data.get('name', instance.name),
+            'location': serializer.validated_data.get('location', instance.location),
+            'price': serializer.validated_data.get('price', instance.price),
+            'image': serializer.validated_data.get('image', instance.image),
+            'description': serializer.validated_data.get('description', instance.description),
+            'amenity': [amenity.name for amenity in serializer.validated_data.get('amenity', instance.amenity.all())],
+            'latitude': serializer.validated_data.get('latitude', instance.latitude),
+            'longitude': serializer.validated_data.get('longitude', instance.longitude),
+        }
+
+        return Response({
+            'status': "success",
+            'message': "Turf updated successfully",
+            'data': updated_data,
+            'response_code': status.HTTP_200_OK,
+        })
+    
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object() 
         self.perform_destroy(instance)
@@ -69,7 +134,7 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
 
 
     
-class PaymentHistory(generics.ListCreateAPIView):
+class PaymentHistory(generics.ListAPIView):
     # queryset = PaymentHistoryModel.objects.all()
     serializer_class = PaymentHistorySerializer
     

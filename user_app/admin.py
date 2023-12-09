@@ -5,3 +5,4 @@ from . models import *
 # admin.site.register(Customer)
 admin.site.register(Player)
 admin.site.register(Team)
+admin.site.register(TeamInvitation)

@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'owner_app',
     'user_app',
     'admin_app',
+    # 'django.contrib.gis',
+
 ]
 
 MIDDLEWARE = [
@@ -177,9 +179,9 @@ REST_FRAMEWORK = {
     ],
 }
 
-AUTHENTICATION_BACKENDS = [
-    'owner_app.authentication_backends.EmailOrUsernameModelBackend',
-    'django.contrib.auth.backends.ModelBackend',
-]
+# AUTHENTICATION_BACKENDS = [
+#     'owner_app.authentication_backends.EmailOrUsernameModelBackend',
+#     'django.contrib.auth.backends.ModelBackend',
+# ]
 
 

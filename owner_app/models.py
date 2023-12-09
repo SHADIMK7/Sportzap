@@ -147,8 +147,8 @@ class Gallery(models.Model):
     description = models.CharField(max_length=255)
     
     def __str__(self):
-        return self.description
-    
+        return self.description    
+
     
 class Profile(models.Model):
     user = models.ForeignKey(Abstract, on_delete=models.CASCADE)
@@ -175,3 +175,5 @@ class RedeemRewardsModel(models.Model):
 
     def __str__(self) -> str:
         return f'{self.user} has redeemed {self.reward} on {self.redeemed_date}'
+
+

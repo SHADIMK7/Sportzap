@@ -10,12 +10,14 @@ from decimal import Decimal
 from django.db.models import F, Sum,Count
 from admin_app.serializers import *
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
 from admin_app.models import Leaderboard
+from rest_framework.permissions import IsAdminUser
+
 
 class OwnerList(generics.ListAPIView):
     # authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAdminUser]
+
     queryset = Owner.objects.all()
     serializer_class = OwnerSerializer
         
@@ -27,8 +29,13 @@ class OwnerList(generics.ListAPIView):
 
     
 class OwnerRetrieveDelete(generics.RetrieveDestroyAPIView):
+
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAdminUser]
+
     queryset = Owner.objects.all()
-    serializer_class = OwnerSerializer
+    serializer_class = OwnerTurfSerializer
+
     def get(self,request,pk):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -36,12 +43,14 @@ class OwnerRetrieveDelete(generics.RetrieveDestroyAPIView):
 
     def delete(self, request,pk):
         instance = self.get_object() 
-        # self.perform_destroy(instance)
         instance.delete()
         return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
 
 
 class TurfList(generics.ListAPIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAdminUser]
+
     queryset = Turf.objects.all()
     serializer_class = TurfSerializer
 
@@ -53,8 +62,12 @@ class TurfList(generics.ListAPIView):
    
 
 class TurfActiveDelete(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAdminUser]
+
     queryset = Turf.objects.all()
     serializer_class = TurfSerializer
+
     def get(self,request, pk):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -75,6 +88,9 @@ class TurfActiveDelete(generics.RetrieveUpdateDestroyAPIView):
     
       
 class CustomerList(generics.ListAPIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAdminUser]
+
     queryset = Customer.objects.all()
     serializer_class = CustomerListSerializer
     def list(self, request):
@@ -84,6 +100,9 @@ class CustomerList(generics.ListAPIView):
 
 
 class CustomerListDelete(generics.RetrieveDestroyAPIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAdminUser]
+
     queryset = Customer.objects.all()
     serializer_class = CustomerListSerializer
     def get(self,request,pk):
@@ -98,6 +117,9 @@ class CustomerListDelete(generics.RetrieveDestroyAPIView):
 
 
 class TurfBookingView(generics.ListAPIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAdminUser]
+
     queryset = TurfBooking.objects.all()
     serializer_class = BookingSerializer
 
@@ -107,6 +129,9 @@ class TurfBookingView(generics.ListAPIView):
         return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
     
 class TurfBookingCancel(generics.RetrieveDestroyAPIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAdminUser]
+
     queryset = TurfBooking.objects.all()
     serializer_class = BookingSerializer
 
@@ -122,6 +147,9 @@ class TurfBookingCancel(generics.RetrieveDestroyAPIView):
 
 
 class TransactionHistory(generics.ListAPIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAdminUser]
+
     queryset = PaymentHistoryModel.objects.all()
     serializer_class = TransactionHistorySerializer
 
@@ -133,6 +161,39 @@ class TransactionHistory(generics.ListAPIView):
 
 
 class AdminIncomeView(APIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        start_date = request.data.get('start_date')
+        end_date = request.data.get('end_date')
+
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        except ValueError:
+            return Response(
+                {"status": "error", "message": "Invalid date format. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        total_income = self.calculate_income(start_date, end_date)
+
+        data = {
+            'total_income': total_income,
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d')
+        }
+        
+        return Response({"status": "success", "message": data, "response_code": status.HTTP_200_OK})
+
+    def calculate_income(self, start_date, end_date):
+        total_income = TurfBooking.objects.filter(
+            date__range=[start_date, end_date]
+        ).aggregate(total=Sum('amount_paid'))['total'] or 0
+
+        return total_income
+    
     def get(self, request):
         
         # Calculate monthly income
@@ -163,6 +224,90 @@ class AdminIncomeView(APIView):
 
 
 
+# class WeeklyIncome(APIView):
+#     def get(self,request):
+#         current_date = datetime.now()
+#         start_of_week = current_date - timedelta(days=current_date.weekday())
+#         end_of_week = start_of_week + timedelta(days=6)
+         
+#         turf_weekly_income = (
+#             TurfBooking.objects
+#             .filter(date__range=[start_of_week, end_of_week])
+#             .annotate('turf',total_income=Sum('price'))  # Filter bookings within the week
+#             .order_by('turf')
+#         )
+        
+
+#         return Response({"status": "success", "message": turf_weekly_income, "response_code": status.HTTP_200_OK})
+
+from collections import defaultdict
+
+class TurfWeeklyIncomeView(APIView):
+    def get(self, request):
+        today = datetime.now().date()
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+
+        turf_income = defaultdict(list)
+
+        for i in range(52):  
+            start_date = start_of_week - timedelta(weeks=i)
+            end_date = end_of_week - timedelta(weeks=i)
+            income = TurfBooking.objects.filter(
+                date__range=[start_date, end_date]
+            ).values('turf__id', 'turf__name').annotate(total_income=Sum('price')).annotate(total_booking=Count('id'))
+
+            for data in income:
+                turf_id = data['turf__id']
+                turf_name = data['turf__name']
+                total_income = data['total_income']
+                total_booking = data['total_booking']
+
+                turf_income[turf_id].append({
+                    'start_date': start_date.strftime('%Y-%m-%d'),
+                    'end_date': end_date.strftime('%Y-%m-%d'),
+                    'turf_name': turf_name,
+                    'income': total_income,
+                    'booking': total_booking 
+                })
+
+        return Response(dict(turf_income))
+    
+from collections import defaultdict
+
+class TurfMonthlyIncomeView(APIView):
+    def get(self, request):
+        today = datetime.now()
+        start_of_month = today.replace(day=1)
+        # end_of_month = start_of_month + timedelta(days=32).replace(day=1) - timedelta(days=1)
+        end_of_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+
+        turf_income = defaultdict(list)
+
+        for i in range(12):  
+            start_date = start_of_month - timedelta(days=30*i)
+            end_date = end_of_month - timedelta(days=30*i)
+            income = TurfBooking.objects.filter(
+                date__range=[start_date, end_date]
+            ).values('turf__id', 'turf__name').annotate(total_income=Sum('price')).annotate(total_booking=Count('id'))
+
+            for data in income:
+                turf_id = data['turf__id']
+                turf_name = data['turf__name']
+                total_income = data['total_income']
+                total_booking = data['total_booking']
+
+                turf_income[turf_id].append({
+                    'start_date': start_date.strftime('%Y-%m-%d'),
+                    'end_date': end_date.strftime('%Y-%m-%d'),
+                    'turf_name': turf_name,
+                    'income': total_income,
+                    'booking': total_booking 
+                })
+
+        return Response(dict(turf_income))
+        
+
 # class AdminView(APIView):
 #     def get(self, request):
 #         turf_credits = (
@@ -187,62 +332,7 @@ class AdminIncomeView(APIView):
 #         return Response(serializer.data)
 
 
-# from django.db.models import F, Sum, Count, Case, When, DecimalField, Value
 
-# class AdminView(APIView):
-#     def get(self, request):
-#         turf_credits = (
-#             TurfBooking.objects.values('turf__name', 'turf__price')
-#             .annotate(
-#                 amount_credited_to_admin=Sum(
-#                     Case(
-#                         When(Payment_type='Partial_payment', then=F('price') * 0.20),
-#                         default=F('price') * 0.80,
-#                         output_field=DecimalField()
-#                     )
-#                 ),
-#                 total_bookings=Count('turf')
-#             )
-#             .order_by('turf__name')
-#         )
-
-#         credited_amounts = []
-#         for turf_credit in turf_credits:
-#             remaining_amount = Decimal(turf_credit['turf__price']) - Decimal(turf_credit['amount_credited_to_admin'] or 0)
-#             if remaining_amount > 0:
-#                 amount_credited_to_admin = min(Decimal(turf_credit['turf__price']), remaining_amount)
-#                 # amount_credited_to_turf = Decimal(turf_credit['turf__price']) - amount_credited_to_admin
-#                 # amount_credited_to_turf = Decimal(turf_credit['turf__amount_paid']) - amount_credited_to_admin
-#             else:
-#                 amount_credited_to_admin = Decimal(turf_credit['turf__price'])
-#                 amount_credited_to_turf = 0
-
-#             credited_amounts.append({
-#                 'turf_name': turf_credit['turf__name'],
-#                 'turf_price': turf_credit['turf__price'],
-#                 'amount_credited_to_admin': amount_credited_to_admin,
-#                 'total_bookings': turf_credit['total_bookings'],
-#                 'amount_credited_to_turf': amount_credited_to_turf
-#             })
-
-#         serializer = AdminIncomeSerializer({'bookings': credited_amounts})
-#         return Response(serializer.data)
-
-# from rest_framework.authtoken.models import Token
-
-# class LogoutView(APIView):
-#     authentication_classes = [TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request):
-#         try:
-#             # Retrieve the user's token
-#             token = Token.objects.get(user=request.user)
-#             # Delete the token
-#             token.delete()
-#             return Response({"status": "success", "message": "Logout successful", "response_code": status.HTTP_200_OK})
-#         except Token.DoesNotExist:
-#             return Response({"status": "failed", "message": "No token found", "response_code": status.HTTP_404_NOT_FOUND})
 
 
 class LeaderBoard(generics.ListAPIView):
@@ -273,6 +363,9 @@ class PlayerLeaderBoard(generics.ListAPIView):
 
 
 class AmenityView(generics.ListCreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAdminUser]
+
     queryset = Amenity.objects.all()
     serializer_class = AmenitySerializer
     def post(self,request):
@@ -288,6 +381,9 @@ class AmenityView(generics.ListCreateAPIView):
 
 
 class AmenityDelete(generics.RetrieveDestroyAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAdminUser]
+
     queryset = Amenity.objects.all()
     serializer_class = AmenitySerializer
     def get(self,request, pk):
@@ -303,6 +399,9 @@ class AmenityDelete(generics.RetrieveDestroyAPIView):
     
 
 class RewardView(generics.ListCreateAPIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAdminUser]
+
     queryset = Reward.objects.all()
     serializer_class = RewardSerializer
 
@@ -320,6 +419,9 @@ class RewardView(generics.ListCreateAPIView):
 
 
 class RewardUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAdminUser]
+
     queryset = Reward.objects.all()
     serializer_class = RewardSerializer
     def get(self,request, pk):
@@ -340,3 +442,75 @@ class RewardUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
             return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
+from geopy.distance import distance 
+from django.shortcuts import get_object_or_404
+
+class TurfDisplayView(generics.ListAPIView):
+    serializer_class = TurfSerializer
+
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')  
+        user = Abstract.objects.get(pk=pk)
+        customer_latitude = float(user.latitude)
+        customer_longitude = float(user.longitude)
+        # customer_latitude = 11.0732 
+        # customer_longitude = 76.0740  
+        customer_location = (customer_latitude, customer_longitude)
+        
+        all_turfs = Turf.objects.all() 
+        
+        turf_distances = {
+            turf: distance(customer_location, (turf.latitude, turf.longitude)).miles
+            for turf in all_turfs
+        }
+        print(turf_distances)
+        # turf_lati = 51.5074  # Latitude for London
+        # turf_longi = -0.1278  # Longitude for London
+        # Sort Turf instances by distance
+        sorted_turfs = sorted(turf_distances, key=turf_distances.get)
+        # dist = distance(customer_location, (turf_lati, turf_longi)).miles
+        print(sorted_turfs)
+        return sorted_turfs
+
+
+
+from django.db.models import Count, Sum
+
+class TurfDateBookingView(generics.ListAPIView):
+    serializer_class = BookingDateSerializer
+
+    def get_queryset(self):
+        queryset  = (
+            TurfBooking.objects
+            .values('date', 'turf')
+            .annotate(total_bookings=Count('id')).annotate(total_earnings=Sum('price'))
+            .order_by('date', 'turf')
+        )
+        return queryset
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+
+
+class CustomerLocationView(generics.RetrieveUpdateAPIView):
+    serializer_class = CustomerLocationSerializer
+
+    def get_object(self):
+        try:
+            customer = Customer.objects.get(pk=self.kwargs['id'])
+            return customer.customer  # Return related Abstract instance
+        except Customer.DoesNotExist:
+            raise Http404("Customer does not exist")
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -114,7 +114,11 @@ DATABASES = {
     }
 }
 
+<<<<<<< HEAD
 # print("getttttttt",os.getenv("DB_NAME"))
+=======
+print("getttttttt",os.getenv("DB_NAME"))
+>>>>>>> 8879974cf3fe6778869c26368d8591acf593f16f
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',

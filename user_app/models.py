@@ -15,9 +15,7 @@ from django.contrib.auth.models import AbstractUser
 
 SKILL_CHOICES = (
     ('Beginner', 'Beginner'),
-    ('Amateur', 'Amateur'),
     ('Intermediate', 'Intermediate'),
-    ('Advanced', 'Advanced'),
     ('Professional', 'Professional')
 )
     
@@ -37,11 +35,19 @@ class Player(models.Model):
     player_skill = models.CharField(choices=SKILL_CHOICES, default='Beginner', max_length=20)
     player_pic = models.ImageField(upload_to='player_image/', null=True)
     player_position = models.CharField(max_length=10)
-    team = models.ForeignKey('Team', related_name='players', on_delete=models.SET_NULL, null=True)
+    teams = models.ManyToManyField('Team', related_name='players')
     invitation_pending = models.BooleanField(default=False) 
     
     def __str__(self):
         return self.player_name
+    
+class TeamInvitation(models.Model):
+    team = models.ForeignKey('Team', related_name='invitations', on_delete=models.CASCADE)
+    player = models.ForeignKey('Player', on_delete=models.CASCADE)
+    is_accepted = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"{self.team} {self.player}"
     
 
 # class RewardPoints(models.Model):

@@ -71,6 +71,25 @@ class TurfSerializer(serializers.ModelSerializer):
         return turf
     
     
+# class TurfPriceUpdateSerializer(serializers.ModelSerializer):
+#     old_price = serializers.SerializerMethodField()
+#     turf_id = serializers.SerializerMethodField()
+#     owner_id = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = TurfPriceUpdateModel
+#         fields = ['turf_id','owner_id' , 'old_price', 'new_price']
+
+#     def get_turf_id(self, object):
+#         print("objects is ", object)
+#         return object
+    
+#     def get_owner_id(self,object):
+#         return object.owner.id
+
+#     def get_old_price(self, obj):
+#         return obj.turf.price
+        
 
 
 class PaymentHistorySerializer(serializers.ModelSerializer):
@@ -125,4 +144,30 @@ class MatchRatingSerializer(serializers.ModelSerializer):
     def get_is_match_ended(self, instance):
         turf_booking = instance.turf_booking
         return turf_booking.is_match_ended()
+    
+    def create(self, validated_data):
+        team1 = validated_data['team1']
+        team2 = validated_data['team2']
+        team1_score = validated_data['team1_score']
+        team2_score = validated_data['team2_score']
+
+        # Determine the winning team
+        winner = None
+        if team1_score > team2_score:
+            winner = team1
+        elif team1_score < team2_score:
+            winner = team2
+
+        # Create a list of player data with win status
+        team1_players_data = [{'id': player.id, 'name': player.player_name, 'win': team1 == winner} for player in team1.players.all()]
+        team2_players_data = [{'id': player.id, 'name': player.player_name, 'win': team2 == winner} for player in team2.players.all()]
+
+        validated_data['players_data'] = {
+            'team1_players': team1_players_data,
+            'team2_players': team2_players_data,
+        }
+
+        instance = super().create(validated_data)
+        return instance
+
     

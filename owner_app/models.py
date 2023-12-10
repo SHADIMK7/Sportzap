@@ -5,6 +5,7 @@ from user_app.models import *
 from admin_app.models import Reward
 from user_app.models import Team
 
+
 # Create your models here.
 
 TYPE_CHOICES = (
@@ -58,6 +59,13 @@ class Turf(models.Model):
 
     def __str__(self):
         return f' {self.name} ({self.owner.Organization_name})'  
+    
+    
+# class TurfPriceUpdateModel(models.Model):
+#     turf = models.ForeignKey(Turf, on_delete=models.CASCADE)
+#     old_price = models.DecimalField(default=0, max_digits=10,decimal_places=2)
+#     new_price = models.DecimalField(null=True, max_digits=10,decimal_places=2)
+    
 
 PAYMENT_CHOICES = (
         ('Partial_payment', 'Partial_payment'),
@@ -119,6 +127,7 @@ class MatchRatingModel(models.Model):
     remark = models.CharField(max_length=50, null=True)
     date_played = models.DateField()
     turf = models.ForeignKey(Turf, on_delete=models.CASCADE)
+    players_data = models.JSONField(null=True, blank=True)
 
   
     def __str__(self):
@@ -145,12 +154,11 @@ class Gallery(models.Model):
     
 class Profile(models.Model):
     user = models.ForeignKey(Abstract, on_delete=models.CASCADE)
-    profile_name = models.CharField(max_length=55)
-    age = models.IntegerField(null=True)
+    profile_name = models.CharField(max_length=55, null=True)
     profile_pic = models.ImageField(upload_to='profile_image/', null=True)
     
     def __str__(self):
-        return self.name
+        return self.profile_name
 
 
 

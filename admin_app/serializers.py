@@ -158,3 +158,29 @@ class CustomerLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Abstract
         fields = ['latitude', 'longitude']        
+
+
+class MatchRatingSerializer(serializers.ModelSerializer):
+    match_id = serializers.IntegerField(source='id')
+    team_id = serializers.SerializerMethodField()
+    result = serializers.SerializerMethodField()
+    date = serializers.DateField(source='date_played')
+
+    def get_team_id(self, obj):
+        if obj.team1_score > obj.team2_score:
+            return obj.team1_id
+        elif obj.team1_score < obj.team2_score:
+            return obj.team2_id
+        return None
+
+    def get_result(self, obj):
+        if obj.team1_score > obj.team2_score:
+            return "win"
+        elif obj.team1_score < obj.team2_score:
+            return "loss"
+        return None
+
+
+    class Meta:
+        model = MatchRatingModel
+        fields = [ 'match_id', 'team_id', 'result', 'date']

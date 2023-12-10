@@ -3,7 +3,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 from .views import *
 
 urlpatterns = [
-        path('login/',obtain_auth_token, name='login'),
+        # path('login/',obtain_auth_token, name='login'),
 
         path('admin_income/',AdminIncomeView.as_view(),name='admin_income'),
         path('owner_list/',OwnerList.as_view(), name='owner_list'),
@@ -27,4 +27,5 @@ urlpatterns = [
         path('weekly_income/',TurfWeeklyIncomeView.as_view(),name='weekly_income'),
         path('monthly_turf_income/',TurfMonthlyIncomeView.as_view(),name='monthly_turf_income'),
         path('customer_location/<int:id>/', CustomerLocationView.as_view(),name='customer_location'),
+        path('match_rating_view/',MatchRatingView.as_view(),name='match_rating_view')
 ]

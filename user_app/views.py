@@ -343,10 +343,11 @@ class PlayerView(generics.ListCreateAPIView):
                         }
                 raise serializers.ValidationError(response_data)
         else:
+            serializer.save()
             response_data = {
-                'status': "error",
-                'message': 'Team ID not provided',
-                'response_code': status.HTTP_400_BAD_REQUEST
+                'status': "success",
+                'message': 'Saved without team ID',
+                'response_code': status.HTTP_200_OK
             }
             raise serializers.ValidationError(response_data)
     
@@ -425,10 +426,13 @@ class ProfileUpdateView(APIView):
     
     def get(self, request, *args, **kwargs):
         user = request.user
+        print(user)
 
         # Retrieve Abstract and Profile instances
         abstract_instance = Abstract.objects.get(pk=user.pk)
+        print(abstract_instance)
         profile_instance = Profile.objects.get(user=user)
+        print(profile_instance)
 
         # Serialize Abstract and Profile instances
         abstract_serializer = AbstractSerializer(abstract_instance)
@@ -465,62 +469,116 @@ class ProfileUpdateView(APIView):
                             'data': data})
             
             
-class SendInvitationView(generics.CreateAPIView):
-    serializer_class = InvitationSerializer
+# class SendInvitationView(generics.CreateAPIView):
+#     serializer_class = InvitationSerializer
+
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+
+#         team_id = serializer.validated_data['team_id']
+#         player_id = serializer.validated_data['player_id']
+
+#         try:
+#             team = Team.objects.get(id=team_id)
+#             player = Player.objects.get(id=player_id)
+#         except (Team.DoesNotExist, Player.DoesNotExist):
+#             return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
+
+#         if team.players.count() < team.team_strength:
+#             # Assuming you have a field in your Player model to track invitations
+#             player.invitation_pending = True
+#             player.save()
+
+#             # You might want to send a notification to the player here
+
+#             return Response({'detail': 'Invitation sent successfully'}, status=status.HTTP_200_OK)
+#         else:
+#             return Response({'detail': 'Team is already full'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class AcceptInvitationView(generics.RetrieveUpdateAPIView):
+#     serializer_class = PlayerSerializer
+    
+#     def get_object(self):
+#         player_id = self.kwargs.get('pk')
+#         try:
+#             return Player.objects.get(id=player_id)
+#         except Player.DoesNotExist:
+#             return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
+
+#     def update(self, request, *args, **kwargs):
+#         instance = self.get_object()
+#         print(instance)
+#         team = request.data.get('team')
+#         print(team)
+#         print(request.data)
+
+#         if instance.invitation_pending:
+#             instance.team = Team.objects.get(id=team)
+#             instance.invitation_pending = False
+#             instance.save()
+
+#             # You might want to send a notification to the team that the player has accepted the invitation
+
+#             return Response({'detail': 'Invitation accepted successfully'}, status=status.HTTP_200_OK)
+#         else:
+#             return Response({'detail': 'No pending invitation for this player'}, status=status.HTTP_400_BAD_REQUEST)
+
+class TeamInvitationView(generics.CreateAPIView):
+    serializer_class = TeamInvitationSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        team_id = serializer.validated_data['team_id']
-        player_id = serializer.validated_data['player_id']
+        team_id = request.data.get('team')
+        player_id = request.data.get('player')
+        
+        # user_id = request.data.get('user')  # Add user ID to the request data
 
         try:
-            team = Team.objects.get(id=team_id)
-            player = Player.objects.get(id=player_id)
+            team = Team.objects.filter(pk=team_id).first()
+            player = Player.objects.filter(pk=player_id).first()
+            # user = Player.objects.get(pk=user_id)  # Fetch the user
+            my_team_players = team.players.all()
+            print(my_team_players)
         except (Team.DoesNotExist, Player.DoesNotExist):
-            return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Invalid team, player, or user ID"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if team.players.count() < team.team_strength:
-            # Assuming you have a field in your Player model to track invitations
-            player.invitation_pending = True
-            player.save()
+        if team.players.count() >= team.team_strength:
+            team_under = team.players.count()
+            print(team_under)
+            return Response({"error": "Team is full"}, status=status.HTTP_400_BAD_REQUEST)
 
-            # You might want to send a notification to the player here
+        if team.players.filter(pk=player_id).exists():
+            return Response({"error": "Player is already in the team"}, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response({'detail': 'Invitation sent successfully'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'detail': 'Team is already full'}, status=status.HTTP_400_BAD_REQUEST)
+        # Check if the user sending the invitation is a team member
+        # if user not in team.players.all():
+        #     return Response({"error": "You are not a member of this team"}, status=status.HTTP_403_FORBIDDEN)
 
+        invitation = TeamInvitation.objects.create(team=team, player=player)
+        return Response({"invitation_id": invitation.id}, status=status.HTTP_201_CREATED)
 
-class AcceptInvitationView(generics.RetrieveUpdateAPIView):
-    serializer_class = PlayerSerializer
-    
-    def get_object(self):
-        player_id = self.kwargs.get('pk')
-        try:
-            return Player.objects.get(id=player_id)
-        except Player.DoesNotExist:
-            return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
+class AcceptInvitationView(generics.UpdateAPIView):
+    queryset = TeamInvitation.objects.all()
+    serializer_class = TeamInvitationSerializer
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         print(instance)
-        team = request.data.get('team')
-        print(team)
-        print(request.data)
 
-        if instance.invitation_pending:
-            instance.team = Team.objects.get(id=team)
-            instance.invitation_pending = False
-            instance.save()
+        if instance.is_accepted:
+            return Response({"error": "Invitation has already been accepted"}, status=status.HTTP_400_BAD_REQUEST)
+        instance.team.players.add(instance.player)
+        player_instance = instance.player
+        team_instance = instance.team
+        print(team_instance)
+        print(player_instance)
+        instance.is_accepted = True
+        print('HI')
+        instance.save()
 
-            # You might want to send a notification to the team that the player has accepted the invitation
 
-            return Response({'detail': 'Invitation accepted successfully'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'detail': 'No pending invitation for this player'}, status=status.HTTP_400_BAD_REQUEST)
-        
+        return Response({"message": "Invitation accepted"}, status=status.HTTP_200_OK)
         
 class RewardPoints(generics.ListAPIView):
     serializer_class = RewardPointSerializer

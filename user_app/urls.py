@@ -6,7 +6,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 urlpatterns = [
     path('register/', CustomerRegistrationView.as_view(), name='register'),
     path('login/', obtain_auth_token, name='login'),
-    path('booking/', BookingView.as_view(), name='booking'),
+    path('booking/<int:pk>/', BookingView.as_view(), name='booking'),
     # path('turf_display/', TurfDisplayView.as_view(), name='turf_display'),
     path('team_list/', TeamView.as_view(), name='team_list'),
     path('team_list/<int:name>/', TeamDetailView.as_view(), name='team_detail'),
@@ -20,5 +20,9 @@ urlpatterns = [
     path('accept_invitation/<int:pk>/', AcceptInvitationView.as_view(), name='accept_invitation'),
     path('booking-history/<int:pk>/', UserBookingHistoryView.as_view(), name="booking-history"),
     path('redeem-rewards/<int:pk>/', RedeemRewards.as_view(), name='redeem-rewards'),
+    # path('sync/', BookingSyncView.as_view(), name='booking_sync'),
+    path('api/turf-booking-ai/', TurfBookingAIView.as_view(), name='turf-booking-ai'),
+
+
     
 ]

@@ -45,16 +45,28 @@ class RegisterUserSerializer(serializers.ModelSerializer):
             return account
         else:
             raise serializers.ValidationError({"abstract": abstract.errors})
+  
+
+
+class TurfBookingAISerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = AiTurfBookModel
+        fields = ['user', 'date', 'start_time', 'end_time', 'price','turf']
+
+    
     
 class TurfBookingSerializer(serializers.ModelSerializer):
     balance = serializers.SerializerMethodField()
+
     class Meta:
         model = TurfBooking  
-        fields = "__all__"
+        exclude = ['turf']
 
-    def get_balance(self,object):
+    def get_balance(self, object):
         return object.price - object.amount_paid
-        
+    
+    
 class TurfDisplaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Turf

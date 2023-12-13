@@ -24,7 +24,7 @@ class OwnerList(generics.ListAPIView):
     def list(self, request):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+        return Response({"status": "success", "response_code": status.HTTP_200_OK, "message": serializer.data})
 
 
     
@@ -110,9 +110,10 @@ class CustomerListDelete(generics.RetrieveDestroyAPIView):
         serializer = self.get_serializer(instance)
         return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
 
-    def delete(self, request, *args, **kwargs):
+    def delete(self, request, pk):
         instance = self.get_object()
-        self.perform_destroy(instance)
+        instance.delete()
+        # self.perform_destroy(instance)
         return Response({"status": "success", "message": "User deleted Successfully", "response_code": status.HTTP_200_OK})
 
 
@@ -224,22 +225,8 @@ class AdminIncomeView(APIView):
 
 
 
-# class WeeklyIncome(APIView):
-#     def get(self,request):
-#         current_date = datetime.now()
-#         start_of_week = current_date - timedelta(days=current_date.weekday())
-#         end_of_week = start_of_week + timedelta(days=6)
-         
-#         turf_weekly_income = (
-#             TurfBooking.objects
-#             .filter(date__range=[start_of_week, end_of_week])
-#             .annotate('turf',total_income=Sum('price'))  # Filter bookings within the week
-#             .order_by('turf')
-#         )
-        
 
-#         return Response({"status": "success", "message": turf_weekly_income, "response_code": status.HTTP_200_OK})
-
+    
 
 
 #   ///// AI
@@ -248,11 +235,12 @@ from collections import defaultdict
 
 class TurfWeeklyIncomeView(APIView):
     def get(self, request):
-        today = datetime.now().date()
+        today = datetime.now()
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
 
-        turf_income = defaultdict(list)
+        # turf_income = defaultdict(list)
+        response_data = []
 
         for i in range(52):  
             start_date = start_of_week - timedelta(weeks=i)
@@ -267,22 +255,23 @@ class TurfWeeklyIncomeView(APIView):
                 total_income = data['total_income']
                 total_booking = data['total_booking']
 
-                turf_income[turf_id].append({
+                response_data.append({
                     'start_date': start_date.strftime('%Y-%m-%d'),
                     'end_date': end_date.strftime('%Y-%m-%d'),
+                    'turf_id': turf_id,
                     'turf_name': turf_name,
                     'income': total_income,
                     'booking': total_booking 
                 })
 
-        return Response(dict(turf_income))
+        return Response(response_data)
 
 
 #   //////////////////    AI 
 # 
 # 
 #  
-from collections import defaultdict
+# from collections import defaultdict
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta 
 
@@ -292,38 +281,41 @@ class TurfMonthlyIncomeView(APIView):
         start_of_month = today.replace(day=1)
 
         # end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        start_of_previous_month = start_of_month - relativedelta(months=1)
+        end_of_previous_month = start_of_month - timedelta(days=1)
+        
+        # turf_income = defaultdict(list)
 
-        turf_income = defaultdict(list)
+        # for i in range(12):
+        #     start_date = start_of_month - relativedelta(months=i)
 
-        for i in range(12):
-            start_date = start_of_month - relativedelta(months=i)
+        #     end_date = (start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        response_data = []
 
-            end_date = (start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-
-            income = TurfBooking.objects.filter(
-                date__range=[start_date, end_date]
+        income = TurfBooking.objects.filter(
+                date__range=[start_of_previous_month, end_of_previous_month]
             ).values('turf__id', 'turf__name','turf__price','turf__owner').annotate(total_income=Sum('price')).annotate(total_booking=Count('id'))
 
-            for data in income:
+        for data in income:
                 turf_id = data['turf__id']
                 turf_owner = data['turf__owner']
                 turf_name = data['turf__name']
                 total_income = data['total_income']
                 total_booking = data['total_booking']
                 price = data['turf__price']
-                turf_income[turf_id].append({
+                response_data.append({
                     'turf_id':turf_id,
                     'turf_owner' : turf_owner ,
-                    'start_date': start_date.strftime('%Y-%m-%d'),
-                    'end_date': end_date.strftime('%Y-%m-%d'),
-                    'month':start_date.strftime("%B"),
+                    'start_date': start_of_previous_month.strftime('%Y-%m-%d'),
+                    'end_date': end_of_previous_month .strftime('%Y-%m-%d'),
+                    'month':start_of_previous_month.strftime("%B"),
                     'turf_name': turf_name,
                     'income': total_income,
                     'booking': total_booking,
                     'price': price
                 })
 
-        return Response(dict(turf_income))
+        return Response(response_data)
 
 
 # class AdminView(APIView):
@@ -386,12 +378,14 @@ class AmenityView(generics.ListCreateAPIView):
 
     queryset = Amenity.objects.all()
     serializer_class = AmenitySerializer
+    
     def post(self,request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "success", "message":serializer.data, "response_code":status.HTTP_201_CREATED})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)            
+    
     def list(self,request):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
@@ -399,11 +393,13 @@ class AmenityView(generics.ListCreateAPIView):
 
 
 class AmenityDelete(generics.RetrieveDestroyAPIView):
+    
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminUser]
 
     queryset = Amenity.objects.all()
     serializer_class = AmenitySerializer
+    
     def get(self,request, pk):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -442,6 +438,7 @@ class RewardUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
 
     queryset = Reward.objects.all()
     serializer_class = RewardSerializer
+
     def get(self,request, pk):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -464,14 +461,15 @@ class RewardUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
 from geopy.distance import distance 
 from django.shortcuts import get_object_or_404
 
-class TurfDisplayView(generics.ListAPIView):
+class TurfDisplayView(generics.RetrieveAPIView):
     serializer_class = TurfSerializer
 
     def get_queryset(self):
-        pk = self.kwargs.get('pk')  
-        user = Abstract.objects.get(pk=pk)
-        customer_latitude = float(user.latitude)
-        customer_longitude = float(user.longitude)
+        pk = self.kwargs.get('id')  
+        user = Customer.objects.get(pk=pk)
+
+        customer_latitude = float(user.customer.latitude)
+        customer_longitude = float(user.customer.longitude)
         # customer_latitude = 11.0732 
         # customer_longitude = 76.0740  
         customer_location = (customer_latitude, customer_longitude)
@@ -479,7 +477,7 @@ class TurfDisplayView(generics.ListAPIView):
         all_turfs = Turf.objects.all() 
         
         turf_distances = {
-            turf: distance(customer_location, (turf.latitude, turf.longitude)).miles
+            turf: distance(customer_location, (turf.latitude, turf.longitude)).km
             for turf in all_turfs
         }
         print(turf_distances)
@@ -490,6 +488,11 @@ class TurfDisplayView(generics.ListAPIView):
         # dist = distance(customer_location, (turf_lati, turf_longi)).miles
         print(sorted_turfs)
         return sorted_turfs
+    
+    def get(self,request,id):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
 
 
 # //////   AI
@@ -507,11 +510,11 @@ class TurfDateBookingView(generics.ListAPIView):
             .order_by('date', 'turf')
         )
         return queryset
-    def list(self, request, *args, **kwargs):
+    def list(self, request):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-    
+        return Response({"status": "success" , "response_code": status.HTTP_200_OK, "message": serializer.data})
+   
 
 
 class CustomerLocationView(generics.RetrieveUpdateAPIView):
@@ -519,62 +522,125 @@ class CustomerLocationView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         try:
-            customer = Customer.objects.get(pk=self.kwargs['id'])
+            customer = Customer.objects.get(pk = self.kwargs.get('id')  )
             return customer.customer  
         except Customer.DoesNotExist:
             raise Http404("Customer does not exist")
     # def get_object(self):
     #     return self.request.user 
-    
-    def patch(self, request, *args, **kwargs):
+
+    def patch(self, request, id):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
+            # return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
-# class MatchRatingView(generics.ListAPIView):
-#     serializer_class = MatchRatingSerializer
-#     queryset = MatchRatingModel.objects.all()
-#     def list(self, request):
+class UserLocationFetch(APIView):
+    def get(self, request):
+        # latitude_str = self.request.query_params.get('latitude')
+        # longitude_str = self.request.query_params.get('longitude')
+        latitude_str = 40.7128
+        longitude_str = 74.0060
+        latitude = float(latitude_str)
+        longitude = float(longitude_str)
+        user_location = (latitude, longitude)
         
-#         queryset = self.get_queryset()
-#         serializer = self.get_serializer(queryset, many=True)
-#         return Response(serializer.data)
-    
+        all_turfs = Turf.objects.all() 
+        turf_data = []
+        for turf in all_turfs:
+            amenities = [amenity.name for amenity in turf.amenity.all()]
+            image_url = request.build_absolute_uri(turf.image.url)  # Construct absolute image URL
+
+            turf_data.append({
+                'id': turf.id,
+                'name': turf.name, 
+                'location': turf.location,
+                'price': turf.price,
+                'image': image_url,
+                'description': turf.description,
+                'amenities': amenities,
+                'distance_km': distance(user_location, (turf.latitude, turf.longitude)).km
+            })
+
+        sorted_turfs = sorted(turf_data, key=lambda x: x['distance_km'])
+        return Response({"status": "success", "response_code": status.HTTP_200_OK, "message": sorted_turfs})
+
 class MatchRatingView(APIView):
     def get(self, request):
-        match_ratings = MatchRatingModel.objects.all()
-        serialized_data = []
-        for rating in match_ratings:
-            if rating.team1_score > rating.team2_score:
-                serialized_data.append({
-                    'match_id': rating.id,
-                    'team_id': rating.team1_id,
-                    'result': 'win',
-                    'date': rating.date_played.strftime('%Y-%m-%d')
+        match_ratings = MatchRatingModel.objects.values('id', 'team1_id','team2_id','team1_score','team2_score','date_played','players_data')
+
+        response_data = []
+
+        for data in match_ratings:
+                match_id = data['id']
+                team1_id = data['team1_id']
+                team1_score = data['team1_score']
+                team2_id = data['team2_id']
+                team2_score = data['team2_score']
+                date_played = data['date_played']
+                players_data = data['players_data']
+                if team1_score>team2_score:
+                    team1_result = "win"
+                    team2_result = "loss"
+                else: 
+                    team1_result = "loss"
+                    team2_result = "win"
+                team1_players = players_data.get('team1_player', [])
+                team2_players = players_data.get('team2_player', [])
+               
+                response_data.append({
+                    'match_id':match_id,
+                    'team_id' : team1_id ,
+                    'result': team1_result,
+                    'date': date_played,
+                    'players':team1_players
                 })
-                serialized_data.append({
-                    'match_id': rating.id,
-                    'team_id': rating.team2_id,
-                    'result': 'loss',
-                    'date': rating.date_played.strftime('%Y-%m-%d')
+                response_data.append({
+                    'match_id':match_id,
+                    'team_id' : team2_id ,
+                    'result': team2_result,
+                    'date': date_played,
+                    'players':team2_players
                 })
-            elif rating.team1_score < rating.team2_score:
-                serialized_data.append({
-                    'match_id': rating.id,
-                    'team_id': rating.team1_id,
-                    'result': 'loss',
-                    'date': rating.date_played.strftime('%Y-%m-%d')
-                })
-                serialized_data.append({
-                    'match_id': rating.id,
-                    'team_id': rating.team2_id,
-                    'result': 'win',
-                    'date': rating.date_played.strftime('%Y-%m-%d')
-                })
-        return Response(serialized_data)
+                
+        return Response({"status": "success", "response_code": status.HTTP_200_OK, "message": response_data})
+
+
+import requests
+        
+class DisplayWeeklyIncomeData(APIView):
+    def get(self, request):
+        ai_backend_url = 'https://a3fd-116-68-110-250.ngrok-free.app/income'
+
+        try:
+            response = requests.get(ai_backend_url)
+            response.raise_for_status()  
+            
+            income_data = response.json()  
+
+            return Response({"status": "success", "response_code": status.HTTP_200_OK, "message": income_data})
+        
+        except requests.RequestException as e:
+            return Response({"status": "failure", "message": f"Request failed: {e}"})        
+
+class DisplayWeeklyIncomeDataID(APIView):
+    def get(self, request, turf_id):
+        ai_backend_url = 'https://a3fd-116-68-110-250.ngrok-free.app/income'
+
+        try:
+            response = requests.get(ai_backend_url)
+            response.raise_for_status()
+            
+            income_data = response.json()
+            specific_turf_income = [income for income in income_data if income.get('turf_id') == turf_id]
+
+            return Response({"status": "success", "specific_turf_income": specific_turf_income})
+        
+        except requests.RequestException as e:
+            return Response({"status": "failure", "message": f"Request failed: {e}"})            
+        

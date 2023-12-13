@@ -22,10 +22,14 @@ urlpatterns = [
         path('amenity_delete/<int:pk>/',AmenityDelete.as_view(),name='amenity_delete'),
         path('reward_create_list/',RewardView.as_view(),name='reward_create_list'),
         path('reward_update_delete/<int:pk>/',RewardUpdateDelete.as_view(),name='reward_update_delete'),
-        path('turf_sort_list/<int:pk>/',TurfDisplayView.as_view(), name='turf_sort_list'),
+        path('turf_sort_list/<int:id>/',TurfDisplayView.as_view(), name='turf_sort_list'),
         path('turf_booking_date/',TurfDateBookingView.as_view(),name='turf_list_date'),
         path('weekly_income/',TurfWeeklyIncomeView.as_view(),name='weekly_income'),
         path('monthly_turf_income/',TurfMonthlyIncomeView.as_view(),name='monthly_turf_income'),
         path('customer_location/<int:id>/', CustomerLocationView.as_view(),name='customer_location'),
-        path('match_rating_view/',MatchRatingView.as_view(),name='match_rating_view')
+        path('user_location_fetch/',UserLocationFetch.as_view(),name='user_location_fetch'),
+        path('match_rating_view/',MatchRatingView.as_view(),name='match_rating_view'),
+        path('display_weekly_income_data/',DisplayWeeklyIncomeData.as_view(),name='displayweeklyincomedata'),
+        path('display_weekly_income_data/<int:turf_id>/', DisplayWeeklyIncomeDataID.as_view(), name='displayweeklyincomedata'),
+
 ]

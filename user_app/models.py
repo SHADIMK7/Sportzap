@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from owner_app.models import *
@@ -24,13 +25,14 @@ class Team(models.Model):
     team_skill = models.CharField(choices=SKILL_CHOICES, default='Beginner', max_length=20)
     team_pic = models.ImageField(upload_to='team_image/', null=True)
     team_strength = models.IntegerField()
-    team_longitude = models.FloatField()
-    team_latitude = models.FloatField()
+    team_longitude = models.FloatField(null=True)
+    team_latitude = models.FloatField(null=True)
     
     def __str__(self):
         return self.team_name
     
 class Player(models.Model):
+    # player_code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     player_name = models.CharField(max_length=55)
     player_skill = models.CharField(choices=SKILL_CHOICES, default='Beginner', max_length=20)
     player_pic = models.ImageField(upload_to='player_image/', null=True)
@@ -48,6 +50,15 @@ class TeamInvitation(models.Model):
     
     def __str__(self):
         return f"{self.team} {self.player}"
+    
+    
+class MatchInvitation(models.Model):
+    sender_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='sender')
+    receiver_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='receiver')
+    is_accepted = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"{self.sender_team} {self.receiver_team}"
     
 
 # class RewardPoints(models.Model):

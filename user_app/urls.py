@@ -16,8 +16,10 @@ urlpatterns = [
     path('player/<int:name>/', PlayerDetail.as_view(), name='player_detail'),
     path('gallery/', GalleryView.as_view(), name='gallery'),
     path('profile/', ProfileUpdateView.as_view(), name='profile'),
-    path('send_invitation/', TeamInvitationView.as_view(), name='send_invitation'),
-    path('accept_invitation/<int:pk>/', AcceptInvitationView.as_view(), name='accept_invitation'),
+    path('player_invitation/', TeamInvitationView.as_view(), name='send_invitation'),
+    path('player_invitation/<int:pk>/', AcceptInvitationView.as_view(), name='accept_invitation'),
+    path('match_invitation/', MatchInvitationView.as_view(), name="match_invitation"),
+    path('match_invitation/<int:pk>/', MatchAcceptInvitationView.as_view(), name='match_accept'),
     path('booking-history/<int:pk>/', UserBookingHistoryView.as_view(), name="booking-history"),
     path('redeem-rewards/<int:pk>/', RedeemRewards.as_view(), name='redeem-rewards'),
     

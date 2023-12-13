@@ -1,5 +1,7 @@
+import requests
+from django.core.files.base import ContentFile
 from django.shortcuts import render
-from rest_framework import generics, status ,mixins, permissions
+from rest_framework import generics, status, permissions
 from . models import *
 from . serializers import *
 from owner_app.models import *
@@ -172,30 +174,97 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
         
         
     
+# class PlayerView(generics.ListCreateAPIView):
+#     queryset = Player.objects.all()
+#     serializer_class = PlayerSerializer
+    
+#     def perform_create(self, serializer):
+#     # def post(self, serializer):
+#         print(serializer)
+#         team_id = self.request.data.get('team')
+#         print('Teamid :',team_id)
+#         print(self.request.data)
+
+#         if team_id:
+#             # team_strength = Team.objects.get(id=team_id).team_strength
+#             team_strength_query = Team.objects.filter(id=team_id).first()
+#             if team_strength_query:
+#                 team_strength = team_strength_query.team_strength
+#                 players_count = Player.objects.filter(team_id=team_id).count()
+
+#                 if players_count >= team_strength:
+#                     print('checked')
+#                     # return Response({'status': "error",
+#                     #                 'message': "Team has reached the maximum number of players.",
+#                     #                 'response_code': status.HTTP_403_FORBIDDEN,
+#                     #                 'team_strength': team_strength})
+#                     response_data = {
+#                         'status': "error",
+#                         'message': 'Team has reached the maximum number of players.',
+#                         'response_code': status.HTTP_403_FORBIDDEN,
+#                         'team_strength': team_strength
+#                     }
+#                     raise serializers.ValidationError(response_data)
+#                 else:
+#                     print('entered in else')
+#                     serializer.save()
+#                     # return Response({'status': "success",
+#                     #                 'message': "Player added successfully",
+#                     #                 'response_code': status.HTTP_200_OK,
+#                     #                 'team_strength': team_strength})
+#                     response_data = {
+#                         'status': "success",
+#                         'message': 'Player added successfully',
+#                         'response_code': status.HTTP_200_OK,
+#                         'team_strength': team_strength,
+#                         'data': serializer.data
+#                     }
+#                     Response(response_data)
+#             else:
+#                 # return Response({'status': "error",
+#                 #                 'message': "not found",
+#                 #                 'response_code': status.HTTP_404_NOT_FOUND})
+#                 response_data = {
+#                         'status': "error",
+#                         'message': 'Team not found',
+#                         'response_code': status.HTTP_404_NOT_FOUND
+#                         }
+#                 raise serializers.ValidationError(response_data)
+#         else:
+#             serializer.save()
+#             response_data = {
+#                 'status': "success",
+#                 'message': 'Saved but no team selected',
+#                 'response_code': status.HTTP_200_OK
+#             }
+#             raise serializers.ValidationError(response_data)
+
+
+
 class PlayerView(generics.ListCreateAPIView):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
     
     def perform_create(self, serializer):
-    # def post(self, serializer):
-        print(serializer)
+        player_pic = self.request.data.get('player_pic')
+        print('PLAYER PIC :', player_pic)
+
+        processed_image = process_profile_pic_with_ai(player_pic)
+        print('ENTERED IN :',processed_image)
+
+        if processed_image:
+            processed_image_content = processed_image
+            serializer.validated_data['player_pic'] = processed_image_content
+            
         team_id = self.request.data.get('team')
-        print('Teamid :',team_id)
-        print(self.request.data)
 
         if team_id:
-            # team_strength = Team.objects.get(id=team_id).team_strength
             team_strength_query = Team.objects.filter(id=team_id).first()
             if team_strength_query:
                 team_strength = team_strength_query.team_strength
                 players_count = Player.objects.filter(team_id=team_id).count()
 
                 if players_count >= team_strength:
-                    print('checked')
-                    # return Response({'status': "error",
-                    #                 'message': "Team has reached the maximum number of players.",
-                    #                 'response_code': status.HTTP_403_FORBIDDEN,
-                    #                 'team_strength': team_strength})
                     response_data = {
                         'status': "error",
                         'message': 'Team has reached the maximum number of players.',
@@ -204,12 +273,7 @@ class PlayerView(generics.ListCreateAPIView):
                     }
                     raise serializers.ValidationError(response_data)
                 else:
-                    print('entered in else')
                     serializer.save()
-                    # return Response({'status': "success",
-                    #                 'message': "Player added successfully",
-                    #                 'response_code': status.HTTP_200_OK,
-                    #                 'team_strength': team_strength})
                     response_data = {
                         'status': "success",
                         'message': 'Player added successfully',
@@ -217,25 +281,48 @@ class PlayerView(generics.ListCreateAPIView):
                         'team_strength': team_strength,
                         'data': serializer.data
                     }
-                    Response(response_data)
+                    return Response(response_data)
             else:
-                # return Response({'status': "error",
-                #                 'message': "not found",
-                #                 'response_code': status.HTTP_404_NOT_FOUND})
                 response_data = {
-                        'status': "error",
-                        'message': 'Team not found',
-                        'response_code': status.HTTP_404_NOT_FOUND
-                        }
+                    'status': "error",
+                    'message': 'Team not found',
+                    'response_code': status.HTTP_404_NOT_FOUND
+                }
                 raise serializers.ValidationError(response_data)
         else:
             serializer.save()
             response_data = {
                 'status': "success",
-                'message': 'Saved without team ID',
+                'message': 'Saved but no team selected',
                 'response_code': status.HTTP_200_OK
             }
             raise serializers.ValidationError(response_data)
+
+def process_profile_pic_with_ai(player_pic):
+    try:
+        ai_service_endpoint = 'https://c1ee-116-68-110-250.ngrok-free.app/formation_img'
+        
+        files = {'image': ('player_pic.png', player_pic.read())}
+        print('FILES :',files)
+        
+        response = requests.post(ai_service_endpoint, files=files)
+        print('RESPONSE :',response)
+        print('HI')
+
+        if response.status_code == 200:
+            processed_image_bytes = response.content
+            print(processed_image_bytes)
+
+            processed_image_content = ContentFile(processed_image_bytes, name='processed_image.jpg')
+            print('IN PROCESSED IMAGE', processed_image_content)
+
+            return processed_image_content
+        else:
+            print(f"Error: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return None
     
 class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Player.objects.all()
@@ -246,7 +333,10 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
         self.queryset = self.queryset.filter(id = name).first()
         if self.queryset:
             serializer = self.get_serializer(self.queryset)
-            return Response({'data': serializer.data})
+            return Response({'status': "success",
+                            'message': "fetched successfully",
+                            'response_code': status.HTTP_204_NO_CONTENT,
+                            'data': serializer.data})
         else:
             data = serializer.errors
             return Response({'status': "error",
@@ -288,7 +378,10 @@ class GalleryView(generics.ListCreateAPIView):
     def get(self, request):
         gallery = Gallery.objects.all()
         serializers = GallerySerializer(gallery, many=True)
-        return Response(serializers.data)
+        return Response({'status': "success",
+                            'message': "fetched successfully",
+                            'response_code': status.HTTP_204_NO_CONTENT,
+                            'data': serializers.data})
     
     def post(self,request):
         serializer = GallerySerializer(data=request.data)
@@ -298,7 +391,8 @@ class GalleryView(generics.ListCreateAPIView):
             print(request.user)
             return Response({'status': "success",
                              'message': "Image uploaded successfully",
-                             'response_code': status.HTTP_200_OK})
+                             'response_code': status.HTTP_200_OK,
+                             'data': ''})
         else: 
             data = serializer.errors
             return Response({'status': "error",
@@ -427,22 +521,36 @@ class TeamInvitationView(generics.CreateAPIView):
             my_team_players = team.players.all()
             print(my_team_players)
         except (Team.DoesNotExist, Player.DoesNotExist):
-            return Response({"error": "Invalid team, player, or user ID"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status': "error",
+                            'message': "Invalid team, player, or user ID",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
 
         if team.players.count() >= team.team_strength:
             team_under = team.players.count()
             print(team_under)
-            return Response({"error": "Team is full"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status': "error",
+                            'message': "Team is full",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+            
 
         if team.players.filter(pk=player_id).exists():
-            return Response({"error": "Player is already in the team"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status': "error",
+                            'message': "Player is already in the team",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
 
         # Check if the user sending the invitation is a team member
         # if user not in team.players.all():
         #     return Response({"error": "You are not a member of this team"}, status=status.HTTP_403_FORBIDDEN)
 
         invitation = TeamInvitation.objects.create(team=team, player=player)
-        return Response({"invitation_id": invitation.id}, status=status.HTTP_201_CREATED)
+        return Response({'status': "success",
+                            'message': "invitation successfully",
+                            "invitation_id": invitation.id,
+                            'response_code': status.HTTP_201_CREATED,
+                            'data': ''})
 
 class AcceptInvitationView(generics.UpdateAPIView):
     queryset = TeamInvitation.objects.all()
@@ -453,7 +561,10 @@ class AcceptInvitationView(generics.UpdateAPIView):
         print(instance)
 
         if instance.is_accepted:
-            return Response({"error": "Invitation has already been accepted"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status': "error",
+                            'message': "Invitation has already been accepted",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
         instance.team.players.add(instance.player)
         player_instance = instance.player
         team_instance = instance.team
@@ -463,9 +574,89 @@ class AcceptInvitationView(generics.UpdateAPIView):
         print('HI')
         instance.save()
 
-
-        return Response({"message": "Invitation accepted"}, status=status.HTTP_200_OK)
+        return Response({'status': "success",
+                            'message': "Invitation accepted",
+                            'response_code': status.HTTP_200_OK,
+                            'data': ''})
+    
+    
+class MatchInvitationView(generics.CreateAPIView):
+    serializer_class = MatchInvitationSerializer
+    
+    def create(self, request, *args, **kwargs):
+        team1_id = request.data.get('sender_team')
+        print(request.data)
+        team2_id = request.data.get('receiver_team')
+        print(team1_id)
+        print(team2_id)
         
+        try:
+            team1 = Team.objects.filter(pk = team1_id).first()
+            team2 = Team.objects.filter(pk = team2_id).first()
+            team1_players = team1.players.all()
+            for player in team1_players:
+                print(f"Player ID: {player.id}, Player Name: {player.player_name}")
+            team2_players = team2.players.all()
+            for player in team2_players:
+                print(f"Player ID: {player.id}, Player Name: {player.player_name}")
+                
+            common_player = set(team1_players.values_list('id', flat=True)).intersection(team2_players.values_list('id', flat=True))
+            print(common_player)
+
+            print(team1_players)
+            print(team2_players)
+        except(Team.DoesNotExist):
+            return Response({'status': "error",
+                            'message': "Invalid team",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+        
+        if team1_id == team2_id:
+            return Response({'status': "error",
+                            'message': "Selected teams are same",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+        
+        if common_player:
+            return Response({'status': "error",
+                            'message': "Selected teams have same players",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+        
+        if team1.team_strength == team2.team_strength:
+            print(team1.team_strength)
+            print(team2.team_strength)
+            
+        team_invitation = MatchInvitation.objects.create(sender_team = team1, receiver_team = team2)
+        return Response({'status': "success",
+                            'message': "invitation successfully",
+                            "invitation_id": team_invitation.id,
+                            'response_code': status.HTTP_201_CREATED,
+                            'data': ''})
+    
+class MatchAcceptInvitationView(generics.UpdateAPIView):
+    queryset = MatchInvitation.objects.all()
+    serializer_class = MatchInvitationSerializer
+    
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        print(instance)
+        if instance.is_accepted:
+            return Response({'status': "error",
+                            'message': "Invitation has already been accepted",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+        else:
+            instance.team1 = instance.sender_team
+            instance.team2 = instance.receiver_team
+            instance.is_accepted = True
+            instance.save()
+            return Response({'status': "success",
+                            'message': "Invitation accepted",
+                            'response_code': status.HTTP_200_OK,
+                            'data': ''})
+          
+               
 class RewardPoints(generics.ListAPIView):
     serializer_class = RewardPointSerializer
     
@@ -488,7 +679,10 @@ class RewardPoints(generics.ListAPIView):
             'reward_points': self.serializer_class(self.get_queryset(), many=True).data
         }
 
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response({'status': "success",
+                        'message': "listed successfully",
+                        'response_code': status.HTTP_200_OK,
+                        'data': response_data})
     
     
     

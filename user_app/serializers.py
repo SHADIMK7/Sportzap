@@ -79,6 +79,15 @@ class TeamInvitationSerializer(serializers.ModelSerializer):
         model = TeamInvitation
         fields = '__all__'
         
+        
+class MatchInvitationSerializer(serializers.ModelSerializer):
+    sender = TeamSerializer(read_only=True)
+    receiver = TeamSerializer(read_only=True)
+    
+    class Meta:
+        model = MatchInvitation
+        fields = '__all__'
+        
     # def create(self, validated_data):
     #     players_data = validated_data.pop('players', [])
 

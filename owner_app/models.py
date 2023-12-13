@@ -160,13 +160,9 @@ class Profile(models.Model):
     def __str__(self):
         return self.profile_name
 
-
-
 class UserBookingHistory(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
     turf_booked = models.ForeignKey(TurfBooking, on_delete=models.CASCADE)
-    
-    
     
     
 class RedeemRewardsModel(models.Model):

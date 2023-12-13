@@ -28,13 +28,29 @@ class CustomLoginView(ObtainAuthToken):
 
         if user:
             token, created = Token.objects.get_or_create(user=user)
+
+            if user.is_superuser:
+                user_id = user.id
+            elif user.usertype == 'owner':
+                owner_id = Owner.objects.get(abstract=user)
+                user_id = owner_id.id
+            elif user.usertype == 'customer':
+                customer_id = Customer.objects.get(customer=user)
+                user_id = customer_id.id
+            elif user.is_staff:
+                user_id = 1
+            else:
+                user_id = None
+
             user_type = user.usertype
 
             response_data = {
                 'token': token.key,
                 'user_type': user_type,
                 'is_admin': user.is_superuser,
+                'user_id': user_id
             }
+            print("user id is ", user_id)
 
             return Response(response_data, status=status.HTTP_200_OK)
         else:
@@ -65,7 +81,10 @@ class Registration(generics.CreateAPIView):
 
         return Response(data)
     
+
+
     
+
     
 class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
     authentication_classes = [TokenAuthentication]
@@ -87,7 +106,17 @@ class TurfCreate(generics.CreateAPIView, generics.ListAPIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
+
+class TurfDisplay(generics.ListAPIView):
+    serializer_class = TurfSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return Turf.objects.filter(pk=pk)
+        
 class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsOwnerOnly]
     
     serializer_class = TurfSerializer
     
@@ -144,19 +173,16 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
     
     
 class PaymentHistory(generics.ListAPIView):
-    # queryset = PaymentHistoryModel.objects.all()
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsOwnerOnly]
     serializer_class = PaymentHistorySerializer
     
     def get_queryset(self):
-        pk = self.kwargs['pk']
-        return PaymentHistoryModel.objects.filter(turf__owner__pk=pk)
-    
-    # def get(self,request,*args, **kwargs):
-    #     PaymentHistoryModel.objects.filter(turf__pk=kwargs['pk'])
-    #     return Response({"success"})
-        
-    # def post(self, request, *args, **kwargs):
-    #     return super().post(request, *args, **kwargs)   
+        user = self.request.user
+        if user.is_authenticated and user.usertype == "owner":
+            return PaymentHistoryModel.objects.filter(turf__owner__abstract__username=user.username)
+        else:
+            return PaymentHistoryModel.objects.none()
         
 
 class MatchRating(generics.ListCreateAPIView):

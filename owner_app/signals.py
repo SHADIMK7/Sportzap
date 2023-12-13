@@ -1,15 +1,35 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from .models import TurfBooking, RewardPointModel, PaymentHistoryModel, UserBookingHistory, Customer
+from .models import TurfBooking, RewardPointModel, PaymentHistoryModel, UserBookingHistory, Customer, AiTurfBookModel
 from django.db import transaction
+from django.db.utils import IntegrityError
 
+
+@receiver(post_save, sender=AiTurfBookModel)
+def create_date_and_time(sender, instance, created, **kwargs):
+    if created and not hasattr(instance, '_being_tested'):
+        print("STARTED AI TURF BOOKING")
+        try:
+            TurfBooking.objects.create(
+                user=instance.user,
+                date=instance.date,
+                start_time=instance.start_time,
+                end_time=instance.end_time,
+                price=instance.price,
+                turf = instance.turf
+            )
+        except IntegrityError as e:
+            print(f"Error creating TurfBooking: {str(e)}")
 
 
 @receiver(pre_save, sender = TurfBooking )
 def create_balance(sender, instance , **kwargs):
     print("BALANCE STARTED")
-    instance.balance = instance.price - instance.amount_paid
-
+    if instance.Payment_type != 'Offline':
+        instance.balance = instance.price - instance.amount_paid
+    else:
+        instance.balance = instance.price
+        instance.amount_paid = instance.price
 
   
 @receiver(post_save, sender=TurfBooking)

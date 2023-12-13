@@ -15,7 +15,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ('admin_app', '0001_initial'),
         ('user_app', '0001_initial'),
-        ('admin_app', '0001_initial'),
         ('auth', '0012_alter_user_first_name_max_length'),
     ]
 
@@ -176,6 +175,17 @@ class Migration(migrations.Migration):
                 ('image', models.ImageField(upload_to='gallery_images/')),
                 ('description', models.CharField(max_length=255)),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='owner_app.customer')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='AiTurfBookModel',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('date', models.DateField()),
+                ('start_time', models.TimeField()),
+                ('end_time', models.TimeField()),
+                ('price', models.FloatField()),
+                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='owner_app.customer')),
             ],
         ),
     ]

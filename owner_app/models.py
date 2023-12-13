@@ -34,6 +34,7 @@ class Customer(models.Model):
     customer_name = models.CharField(max_length=100)
     reward_points = models.IntegerField(default=0)
     
+    
     def __str__(self):
         return self.customer_name
 
@@ -69,8 +70,20 @@ class Turf(models.Model):
 
 PAYMENT_CHOICES = (
         ('Partial_payment', 'Partial_payment'),
-        ('Full_payment', 'Full_payment')
+        ('Full_payment', 'Full_payment'),
+        ('Offline_payment', 'Offline_payment')
     )
+
+
+class AiTurfBookModel(models.Model):
+    user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    price = models.FloatField()
+    turf =  models.ForeignKey(Turf, on_delete=models.SET_NULL, null=True)
+
+
 
 class TurfBooking(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)

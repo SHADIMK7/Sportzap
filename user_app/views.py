@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.shortcuts import render
 from rest_framework import generics, status ,mixins, permissions
 from . models import *
@@ -8,6 +9,11 @@ from rest_framework.response import Response
 from geopy.distance import distance
 from rest_framework .authtoken.models import Token
 from . help import *
+import requests
+from rest_framework.permissions import IsAuthenticated
+from datetime import datetime, timedelta
+
+
 
 # Create your views here.
 class CustomerRegistrationView(generics.CreateAPIView):
@@ -60,25 +66,133 @@ class CustomerRegistrationView(generics.CreateAPIView):
     
         
 class BookingView(generics.ListCreateAPIView):
-    queryset = TurfBooking.objects.all()
     serializer_class = TurfBookingSerializer
-    
-    def post(self, request):
-        serializer = TurfBookingSerializer(data = request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'status': "success",
-                            'message': "Booking successful",
-                            'response_code': status.HTTP_200_OK,
-                            'data': serializer.data})
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return TurfBooking.objects.filter(turf=pk)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        turf = self.kwargs['pk'] 
+
+        try:
+            selected_turf = Turf.objects.get(pk=turf)
+        except Turf.DoesNotExist:
+            raise Http404("Turf does not exist")
+
+        if isinstance(user, Customer):
+            serializer.validated_data['user'] = user
         else:
-            data = serializer.errors
-            return Response({'status': "error",
-                            'message': "Registration unsuccessful",
-                            'response_code': status.HTTP_403_FORBIDDEN,
-                            'data':data}) 
+            customer = Customer.objects.get(customer=user)
+            serializer.validated_data['user'] = customer
+
+        serializer.validated_data['turf'] = selected_turf
+
+        serializer.save()
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response({
+            'status': "success",
+            'message': "Booking successful",
+            'response_code': status.HTTP_200_OK,
+            'data': serializer.data
+        })
     
-    
+class TurfBookingAIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = TurfBookingAISerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data.get('user')
+        user_id = user.id
+        print("user id is", user_id)
+        if user_id is None:
+            return Response({'error': 'User ID not provided in the request data'}, status=status.HTTP_400_BAD_REQUEST)
+
+        date_obj = serializer.validated_data.get('date')
+        start_time_obj = serializer.validated_data.get('start_time')
+        end_time_obj = serializer.validated_data.get('end_time')
+        price = serializer.validated_data.get('price')
+        turf = serializer.validated_data.get('turf')
+        turf_id = turf.id
+
+        formatted_date = date_obj.strftime('%Y-%m-%d')
+        formatted_start_time = start_time_obj.strftime('%H:%M:%S')
+        formatted_end_time = end_time_obj.strftime('%H:%M:%S')
+
+        ai_endpoint = 'https://043e-116-68-110-250.ngrok-free.app/dynamic_discount'
+        print("ai is price is ", price)
+        three_months = datetime.now() - timedelta(days=90)
+
+        booking_count = TurfBooking.objects.filter(user=user_id, date__gte=three_months).count()
+        print("BOOKING COUNT IN LAST 3 MONTHS IS ", booking_count)
+        ai_data = {
+            'user': user_id,
+            'date': formatted_date,
+            'start_time': formatted_start_time,
+            'end_time': formatted_end_time,
+            'price': price,
+            'turf': turf_id,
+            'booking_count':booking_count
+        }
+
+        # Initialize ai_response here
+        ai_response = None
+
+        try:
+            # Make a POST request to the AI service
+            ai_response = requests.post(ai_endpoint, json=ai_data)
+            ai_response.raise_for_status()  # Raise an exception for bad responses
+
+            # Check if 'dpiscount_price' key is present in the JSON response
+            if 'discount_price' in ai_response.json():
+                # Get the modified price from the AI service response
+                modified_price = ai_response.json()['discount_price']
+                print("modified price is ", modified_price)
+
+                # Create a new AiTurfBookModel instance with the modified price
+                AiTurfBookModel.objects.create(
+                    user=user,
+                    date=date_obj,
+                    start_time=start_time_obj,
+                    end_time=end_time_obj,
+                    price=modified_price,
+                    turf=turf
+                )
+
+                # Return the modified price to the frontend
+                return Response({'modified_price': modified_price, 'date': date_obj, 'start_time': start_time_obj,
+                                 'end_time': end_time_obj, 'turf': turf.id, 'user': user.id},
+                                status=status.HTTP_200_OK)
+            else:
+                # Print the entire response content for debugging
+                print(f"Unexpected response format. Response content: {ai_response.content}")
+
+                # Handle the case where 'discount_price' key is not present
+                return Response({'error': 'Invalid response format'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except requests.RequestException as e:
+            # Log the error and print the response content
+            print(f"Error: {str(e)}")
+            print(f"Response content: {ai_response.content if ai_response else 'No response'}")
+
+            # Return a more informative response
+            return Response({'error': 'Error making request to AI service'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except requests.RequestException as e:
+            # Log the error and print the response content
+            print(f"Error: {str(e)}")
+            print(f"Response content: {ai_response.content}")
+
+            # Return a more informative response
+            return Response({'error': 'Error making request to AI service'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 # class TurfDisplayView(generics.ListAPIView):
 #     queryset = Turf.objects.all()

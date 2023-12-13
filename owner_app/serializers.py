@@ -94,10 +94,10 @@ class TurfSerializer(serializers.ModelSerializer):
 
 class PaymentHistorySerializer(serializers.ModelSerializer):
     turf = serializers.SerializerMethodField()
-    price = serializers.FloatField(source='turf_booking.price')
-    user_name = serializers.CharField(source='turf_booking.user_name')
+    price = serializers.FloatField(source='turf_booking.price', allow_null=True) 
+    user_name = serializers.CharField(source='turf_booking.user_name', allow_null=True)
     start_time = serializers.SerializerMethodField()
-    end_time = serializers.SerializerMethodField() 
+    end_time = serializers.SerializerMethodField()
     amount_paid = serializers.SerializerMethodField()
     balance = serializers.SerializerMethodField()
 

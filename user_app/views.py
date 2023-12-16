@@ -11,7 +11,9 @@ from rest_framework .authtoken.models import Token
 from . help import *
 import requests
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 from datetime import datetime, timedelta
+from owner_app.permissions import IsUserOnly
 
 
 
@@ -64,10 +66,42 @@ class CustomerRegistrationView(generics.CreateAPIView):
                             'response_code': status.HTTP_403_FORBIDDEN,
                             'data': data})    
     
+    
+class TurfAvailabilityShow(generics.RetrieveAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsUserOnly]
+    serializer_class = UserBookingHistorySerializer
+
+    def get_object(self):
+        pk = self.kwargs['pk']
+        turf_booking_history = UserBookingHistory.objects.filter(turf_booked__turf=pk).first()
+        return turf_booking_history
+ 
+    def get(self, request, *args, **kwargs):
+        turf_booking_history = self.get_object()
+
+        user_id = self.request.user.id
+        print('user id is ', user_id)
+
+        three_months_ago = datetime.now() - timedelta(days=90)
+
+        booking_count = TurfBooking.objects.filter(user__customer=user_id, date__gte=three_months_ago).count()
+        print("booking count ", booking_count)
+        if turf_booking_history is None:
+            return Response({"detail": "Turf booking history not found.","user booking count": booking_count}, status=404)
+
+
+        serialized_data = self.get_serializer(turf_booking_history).data
+
+        return Response({
+            "turf booking history": serialized_data,
+            "user booking count": booking_count
+        })
+
         
 class BookingView(generics.ListCreateAPIView):
     serializer_class = TurfBookingSerializer
-    permission_classes = [IsAuthenticated]
+    
 
     def get_queryset(self):
         pk = self.kwargs['pk']
@@ -105,14 +139,18 @@ class BookingView(generics.ListCreateAPIView):
         })
     
 class TurfBookingAIView(APIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsUserOnly]
+    
     def post(self, request, *args, **kwargs):
         serializer = TurfBookingAISerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = serializer.validated_data.get('user')
+        # user = serializer.validated_data.get('user')
+        user = request.user
         user_id = user.id
         print("user id is", user_id)
-        if user_id is None:
+        if user_id is None:  
             return Response({'error': 'User ID not provided in the request data'}, status=status.HTTP_400_BAD_REQUEST)
 
         date_obj = serializer.validated_data.get('date')
@@ -126,11 +164,11 @@ class TurfBookingAIView(APIView):
         formatted_start_time = start_time_obj.strftime('%H:%M:%S')
         formatted_end_time = end_time_obj.strftime('%H:%M:%S')
 
-        ai_endpoint = 'https://043e-116-68-110-250.ngrok-free.app/dynamic_discount'
+        ai_endpoint = 'https://5673-116-68-110-250.ngrok-free.app/dynamic_discount'
         print("ai is price is ", price)
         three_months = datetime.now() - timedelta(days=90)
 
-        booking_count = TurfBooking.objects.filter(user=user_id, date__gte=three_months).count()
+        booking_count = TurfBooking.objects.filter(user__customer=user_id, date__gte=three_months).count()
         print("BOOKING COUNT IN LAST 3 MONTHS IS ", booking_count)
         ai_data = {
             'user': user_id,
@@ -185,14 +223,7 @@ class TurfBookingAIView(APIView):
             # Return a more informative response
             return Response({'error': 'Error making request to AI service'},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        except requests.RequestException as e:
-            # Log the error and print the response content
-            print(f"Error: {str(e)}")
-            print(f"Response content: {ai_response.content}")
-
-            # Return a more informative response
-            return Response({'error': 'Error making request to AI service'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
     
 # class TurfDisplayView(generics.ListAPIView):
 #     queryset = Turf.objects.all()
@@ -343,11 +374,10 @@ class PlayerView(generics.ListCreateAPIView):
                         }
                 raise serializers.ValidationError(response_data)
         else:
-            serializer.save()
             response_data = {
-                'status': "success",
-                'message': 'Saved without team ID',
-                'response_code': status.HTTP_200_OK
+                'status': "error",
+                'message': 'Team ID not provided',
+                'response_code': status.HTTP_400_BAD_REQUEST
             }
             raise serializers.ValidationError(response_data)
     
@@ -426,13 +456,10 @@ class ProfileUpdateView(APIView):
     
     def get(self, request, *args, **kwargs):
         user = request.user
-        print(user)
 
         # Retrieve Abstract and Profile instances
         abstract_instance = Abstract.objects.get(pk=user.pk)
-        print(abstract_instance)
         profile_instance = Profile.objects.get(user=user)
-        print(profile_instance)
 
         # Serialize Abstract and Profile instances
         abstract_serializer = AbstractSerializer(abstract_instance)
@@ -468,128 +495,90 @@ class ProfileUpdateView(APIView):
                             'response_code': status.HTTP_400_BAD_REQUEST,
                             'data': data})
             
-            
-# class SendInvitationView(generics.CreateAPIView):
-#     serializer_class = InvitationSerializer
 
-#     def create(self, request, *args, **kwargs):
-#         serializer = self.get_serializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-
-#         team_id = serializer.validated_data['team_id']
-#         player_id = serializer.validated_data['player_id']
-
-#         try:
-#             team = Team.objects.get(id=team_id)
-#             player = Player.objects.get(id=player_id)
-#         except (Team.DoesNotExist, Player.DoesNotExist):
-#             return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
-
-#         if team.players.count() < team.team_strength:
-#             # Assuming you have a field in your Player model to track invitations
-#             player.invitation_pending = True
-#             player.save()
-
-#             # You might want to send a notification to the player here
-
-#             return Response({'detail': 'Invitation sent successfully'}, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'detail': 'Team is already full'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-# class AcceptInvitationView(generics.RetrieveUpdateAPIView):
-#     serializer_class = PlayerSerializer
+class UserDelete(generics.DestroyAPIView):
     
-#     def get_object(self):
-#         player_id = self.kwargs.get('pk')
-#         try:
-#             return Player.objects.get(id=player_id)
-#         except Player.DoesNotExist:
-#             return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
+    def delete(self, request, *args, **kwargs):
+        user = self.request.user
 
-#     def update(self, request, *args, **kwargs):
-#         instance = self.get_object()
-#         print(instance)
-#         team = request.data.get('team')
-#         print(team)
-#         print(request.data)
+        customer = user
+        if customer:
+            customer.delete()
+            return Response({'status': 'success'})
+        else:
+            return Response({'status': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
 
-#         if instance.invitation_pending:
-#             instance.team = Team.objects.get(id=team)
-#             instance.invitation_pending = False
-#             instance.save()
-
-#             # You might want to send a notification to the team that the player has accepted the invitation
-
-#             return Response({'detail': 'Invitation accepted successfully'}, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'detail': 'No pending invitation for this player'}, status=status.HTTP_400_BAD_REQUEST)
-
-class TeamInvitationView(generics.CreateAPIView):
+            
+class SendInvitationView(generics.CreateAPIView):
     serializer_class = TeamInvitationSerializer
 
     def create(self, request, *args, **kwargs):
-        team_id = request.data.get('team')
-        player_id = request.data.get('player')
-        
-        # user_id = request.data.get('user')  # Add user ID to the request data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        team_id = serializer.validated_data['team_id']
+        player_id = serializer.validated_data['player_id']
 
         try:
-            team = Team.objects.filter(pk=team_id).first()
-            player = Player.objects.filter(pk=player_id).first()
-            # user = Player.objects.get(pk=user_id)  # Fetch the user
-            my_team_players = team.players.all()
-            print(my_team_players)
+            team = Team.objects.get(id=team_id)
+            player = Player.objects.get(id=player_id)
         except (Team.DoesNotExist, Player.DoesNotExist):
-            return Response({"error": "Invalid team, player, or user ID"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if team.players.count() >= team.team_strength:
-            team_under = team.players.count()
-            print(team_under)
-            return Response({"error": "Team is full"}, status=status.HTTP_400_BAD_REQUEST)
+        if team.players.count() < team.team_strength:
+            # Assuming you have a field in your Player model to track invitations
+            player.invitation_pending = True
+            player.save()
 
-        if team.players.filter(pk=player_id).exists():
-            return Response({"error": "Player is already in the team"}, status=status.HTTP_400_BAD_REQUEST)
+            # You might want to send a notification to the player here
 
-        # Check if the user sending the invitation is a team member
-        # if user not in team.players.all():
-        #     return Response({"error": "You are not a member of this team"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'detail': 'Invitation sent successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'detail': 'Team is already full'}, status=status.HTTP_400_BAD_REQUEST)
 
-        invitation = TeamInvitation.objects.create(team=team, player=player)
-        return Response({"invitation_id": invitation.id}, status=status.HTTP_201_CREATED)
 
-class AcceptInvitationView(generics.UpdateAPIView):
-    queryset = TeamInvitation.objects.all()
-    serializer_class = TeamInvitationSerializer
+class AcceptInvitationView(generics.RetrieveUpdateAPIView):
+    serializer_class = PlayerSerializer
+    
+    def get_object(self):
+        player_id = self.kwargs.get('pk')
+        try:
+            return Player.objects.get(id=player_id)
+        except Player.DoesNotExist:
+            return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         print(instance)
+        team = request.data.get('team')
+        print(team)
+        print(request.data)
 
-        if instance.is_accepted:
-            return Response({"error": "Invitation has already been accepted"}, status=status.HTTP_400_BAD_REQUEST)
-        instance.team.players.add(instance.player)
-        player_instance = instance.player
-        team_instance = instance.team
-        print(team_instance)
-        print(player_instance)
-        instance.is_accepted = True
-        print('HI')
-        instance.save()
+        if instance.invitation_pending:
+            instance.team = Team.objects.get(id=team)
+            instance.invitation_pending = False
+            instance.save()
 
+            # You might want to send a notification to the team that the player has accepted the invitation
 
-        return Response({"message": "Invitation accepted"}, status=status.HTTP_200_OK)
+            return Response({'detail': 'Invitation accepted successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'detail': 'No pending invitation for this player'}, status=status.HTTP_400_BAD_REQUEST)
+        
         
 class RewardPoints(generics.ListAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsUserOnly]
     serializer_class = RewardPointSerializer
     
     def get_queryset(self):
         pk = self.kwargs['pk']
-        return RewardPointModel.objects.filter(booking_user_pk=pk)
+        return RewardPointModel.objects.filter(user=pk)
     
     def list(self,request , *args, **kwargs):
         user = self.kwargs['pk']
-        reward_points = RewardPointModel.objects.filter(booking_user_pk=user).aggregate(total_points=models.Sum('reward_points'))
+        print("permission",self.permission_classes)
+        reward_points = RewardPointModel.objects.filter(user=user).aggregate(total_points=models.Sum('reward_points'))
         
         if not reward_points['total_points']:
             total_points = 0
@@ -602,11 +591,13 @@ class RewardPoints(generics.ListAPIView):
             'reward_points': self.serializer_class(self.get_queryset(), many=True).data
         }
 
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response({'status':"success",'message': "Reward points listed successfully",'response_code': status.HTTP_201_CREATED,"data":response_data})
     
     
     
 class UserBookingHistoryView(generics.ListAPIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsUserOnly]
     serializer_class = UserBookingHistorySerializer
 
     def get_queryset(self):
@@ -614,8 +605,15 @@ class UserBookingHistoryView(generics.ListAPIView):
         return UserBookingHistory.objects.filter(user=pk)
     
     
-class RedeemRewards(generics.CreateAPIView):
+class RedeemRewards(generics.ListCreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsUserOnly]
     serializer_class = RedeemRewardsSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return RedeemRewardsModel.objects.filter(user=pk)
+    
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -623,8 +621,11 @@ class RedeemRewards(generics.CreateAPIView):
         
         user = serializer.validated_data['user']
         reward = serializer.validated_data.get('reward') 
+        print("reward", reward)
 
         if not reward or user.reward_points < reward.reward_points:
+            print("reward points is ", user.reward_points)
+            # print("points for reward is ",reward.reward_points)
             return Response({'status': "failed",'message': 'Not enough reward points or invalid reward','response_code':status.HTTP_400_BAD_REQUEST})
 
         instance = serializer.save(redeemed_date=timezone.now())
@@ -638,4 +639,8 @@ class RedeemRewards(generics.CreateAPIView):
                         'remaining_points': user.reward_points,
                         }
 
-        return Response({'status':"success",'message': "Reward redeemed successfully","data":response_data,'response_code': status.HTTP_201_CREATED,})
+        return Response({'status':"success",'message': "Reward redeemed successfully",'response_code': status.HTTP_201_CREATED,"data":response_data,})
+    
+    
+
+

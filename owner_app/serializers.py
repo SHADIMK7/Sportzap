@@ -170,4 +170,16 @@ class MatchRatingSerializer(serializers.ModelSerializer):
         instance = super().create(validated_data)
         return instance
 
+
+
+class AmenitySerializer(serializers.ModelSerializer):
     
+    
+    class Meta:
+        model = Amenity
+        fields = "__all__"
+    
+    
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)

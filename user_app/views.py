@@ -1,6 +1,8 @@
+import requests
+import stripe
+from django.core.files.base import ContentFile
 from django.http import Http404
-from django.shortcuts import render
-from rest_framework import generics, status ,mixins, permissions
+from rest_framework import generics, status, permissions
 from . models import *
 from . serializers import *
 from owner_app.models import *
@@ -98,132 +100,298 @@ class TurfAvailabilityShow(generics.RetrieveAPIView):
             "user booking count": booking_count
         })
 
+    
         
+# class BookingView(generics.ListCreateAPIView):
+#     serializer_class = TurfBookingSerializer
+#     # permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         pk = self.kwargs['pk']
+#         return TurfBooking.objects.filter(turf=pk)
+
+#     def perform_create(self,request,serializer):
+#         # user = self.request.user
+#         user = 1
+#         turf = self.kwargs['pk']
+
+#         try:
+#             selected_turf = Turf.objects.get(pk=turf)
+#         except Turf.DoesNotExist:
+#             raise Http404("Turf does not exist")
+
+#         if isinstance(user, Customer):
+#             serializer.validated_data['user'] = user
+#         else:
+#             customer = Customer.objects.get(customer=user)
+#             serializer.validated_data['user'] = customer
+
+#         serializer.validated_data['turf'] = selected_turf
+#         serializer.save()
+
+#     def post(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         self.perform_create(request,serializer)
+
+#         return Response({
+#             'status': "success",
+#             'message': "Booking successful",
+#             'response_code': status.HTTP_200_OK,
+#             'data': serializer.data
+#         })
+
+
+# class BookingView(generics.ListCreateAPIView):
+#     serializer_class = TurfBookingSerializer
+
+#     def get_queryset(self):
+#         pk = self.kwargs['pk']
+#         return TurfBooking.objects.filter(turf=pk)
+
+#     def perform_create(self, request, serializer):
+#         # user = request.user
+#         user = 1
+#         turf = self.kwargs['pk']
+
+#         try:
+#             selected_turf = Turf.objects.get(pk=turf)
+#         except Turf.DoesNotExist:
+#             raise Http404("Turf does not exist")
+
+#         # Implement Stripe payment logic
+#         stripe.api_key = 'sk_test_51ONT9dSB1nMhPCpjlALhOnjHuPgxdfYIRbk54BGhlmpmT1AuipFXvQnitrUMQDh8KG1nyAEBiDu0LEwGgL9K2iDE00Nkf1Joqf'
+#         try:
+#             # Create a charge using Stripe API
+#             charge = stripe.Charge.create(
+#                 amount=serializer.validated_data['price'],  # Specify the amount to charge in cents
+#                 currency='usd',
+#                 source=serializer.validated_data['stripe_token'],  # Stripe token obtained from frontend
+#                 description='Booking payment',
+#             )
+
+#             # If the charge is successful, proceed with creating the booking
+#             if charge['status'] == 'succeeded':
+#                 if isinstance(user, Customer):
+#                     serializer.validated_data['user'] = user
+#                 else:
+#                     customer = Customer.objects.get(customer=user)
+#                     serializer.validated_data['user'] = customer
+
+#                 serializer.validated_data['turf'] = selected_turf
+#                 serializer.save()
+
+#                 return True
+#         except stripe.error.CardError as e:
+#             # Handle card error
+#             error_msg = str(e)
+#             raise serializers.ValidationError({'stripe_token': error_msg})
+
+#     def post(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+
+#         # Perform Stripe payment and create booking
+#         payment_successful = self.perform_create(request, serializer)
+
+#         if payment_successful:
+#             return Response({
+#                 'status': "success",
+#                 'message': "Booking successful",
+#                 'response_code': status.HTTP_200_OK,
+#                 'data': serializer.data
+#             })
+
+#         return Response({
+#             'status': "error",
+#             'message': "Payment failed",
+#             'response_code': status.HTTP_400_BAD_REQUEST,
+#         })
+
+
 class BookingView(generics.ListCreateAPIView):
     serializer_class = TurfBookingSerializer
-    
+    # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         pk = self.kwargs['pk']
         return TurfBooking.objects.filter(turf=pk)
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        turf = self.kwargs['pk'] 
+    def perform_create(self, request, serializer):
+        user = 1  
+        # user = self.request.user
+        turf = self.kwargs['pk']
+        print(turf)
 
+        try:
+            selected_turf = Turf.objects.get(pk=turf)
+            print(selected_turf)
+        except Turf.DoesNotExist:
+            raise Http404("Turf does not exist")
+
+        stripe.api_key = 'sk_test_51ONT9dSB1nMhPCpjlALhOnjHuPgxdfYIRbk54BGhlmpmT1AuipFXvQnitrUMQDh8KG1nyAEBiDu0LEwGgL9K2iDE00Nkf1Joqf'
+        
+        try:
+            charge = stripe.Charge.create(
+                amount=serializer.validated_data['price'],
+                currency='usd',
+                source=serializer.validated_data['stripe_token'],
+                description='Booking payment',
+            )
+
+            if charge['status'] == 'succeeded':
+                if isinstance(user, Customer):
+                    serializer.validated_data['user'] = user
+                else:
+                    customer = Customer.objects.get(customer=user)
+                    serializer.validated_data['user'] = customer
+
+                serializer.validated_data['turf'] = selected_turf
+                serializer.save()
+
+                return True
+        except stripe.error.CardError as e:
+            error_msg = str(e)
+            raise serializers.ValidationError({'stripe_token': error_msg})
+
+    def post(self, request, *args, **kwargs):
+        turf = self.kwargs['pk']
+        print(turf)
+        print('ENTERED')
         try:
             selected_turf = Turf.objects.get(pk=turf)
         except Turf.DoesNotExist:
             raise Http404("Turf does not exist")
-
-        if isinstance(user, Customer):
-            serializer.validated_data['user'] = user
-        else:
-            customer = Customer.objects.get(customer=user)
-            serializer.validated_data['user'] = customer
-
-        serializer.validated_data['turf'] = selected_turf
-
-        serializer.save()
-
-    def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
 
-        return Response({
-            'status': "success",
-            'message': "Booking successful",
-            'response_code': status.HTTP_200_OK,
-            'data': serializer.data
-        })
+        Payment_type = serializer.validated_data.get('Payment_type', 'Full_payment')
+
+        if Payment_type == 'Full_payment':
+            print('ENTERED IN PAYMENT')
+            serializer.validated_data['turf'] = selected_turf
+            
+            payment_successful = self.perform_create(request, serializer)
+
+            if payment_successful:
+                return Response({
+                    'status': "success",
+                    'message': "Booking successful",
+                    'response_code': status.HTTP_200_OK,
+                    'data': serializer.data
+                })
+
+            return Response({
+                'status': "error",
+                'message': "Payment failed",
+                'response_code': status.HTTP_400_BAD_REQUEST,
+            })
+        elif Payment_type == 'Offline_payment':
+            print('ENTERED IN OFFLINE PAYMENT')
+            serializer.validated_data['turf'] = selected_turf
+            serializer.save()
+            
+            return Response({
+                'status': "success",
+                'message': "Booking successful (offline payment)",
+                'response_code': status.HTTP_200_OK,
+                'data': serializer.data
+            })
+        else:
+            return Response({
+                'status': "error",
+                'message': "Invalid payment method",
+                'response_code': status.HTTP_400_BAD_REQUEST,
+            })
     
-class TurfBookingAIView(APIView):
-    # authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsUserOnly]
-    
-    def post(self, request, *args, **kwargs):
-        serializer = TurfBookingAISerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+#-----------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------
+# class TurfBookingAIView(APIView):
+#     def post(self, request, *args, **kwargs):
+#         serializer = TurfBookingAISerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
 
-        # user = serializer.validated_data.get('user')
-        user = request.user
-        user_id = user.id
-        print("user id is", user_id)
-        if user_id is None:  
-            return Response({'error': 'User ID not provided in the request data'}, status=status.HTTP_400_BAD_REQUEST)
+#         user = serializer.validated_data.get('user')
+#         user_id = user.id
+#         print("user id is", user_id)
+#         if user_id is None:
+#             return Response({'error': 'User ID not provided in the request data'}, status=status.HTTP_400_BAD_REQUEST)
 
-        date_obj = serializer.validated_data.get('date')
-        start_time_obj = serializer.validated_data.get('start_time')
-        end_time_obj = serializer.validated_data.get('end_time')
-        price = serializer.validated_data.get('price')
-        turf = serializer.validated_data.get('turf')
-        turf_id = turf.id
+#         date_obj = serializer.validated_data.get('date')
+#         start_time_obj = serializer.validated_data.get('start_time')
+#         end_time_obj = serializer.validated_data.get('end_time')
+#         price = serializer.validated_data.get('price')
+#         turf = serializer.validated_data.get('turf')
+#         turf_id = turf.id
 
-        formatted_date = date_obj.strftime('%Y-%m-%d')
-        formatted_start_time = start_time_obj.strftime('%H:%M:%S')
-        formatted_end_time = end_time_obj.strftime('%H:%M:%S')
+#         formatted_date = date_obj.strftime('%Y-%m-%d')
+#         formatted_start_time = start_time_obj.strftime('%H:%M:%S')
+#         formatted_end_time = end_time_obj.strftime('%H:%M:%S')
 
-        ai_endpoint = 'https://5673-116-68-110-250.ngrok-free.app/dynamic_discount'
-        print("ai is price is ", price)
-        three_months = datetime.now() - timedelta(days=90)
+#         ai_endpoint = 'https://5673-116-68-110-250.ngrok-free.app/dynamic_discount'
+#         print("ai is price is ", price)
+#         three_months = datetime.now() - timedelta(days=90)
 
-        booking_count = TurfBooking.objects.filter(user__customer=user_id, date__gte=three_months).count()
-        print("BOOKING COUNT IN LAST 3 MONTHS IS ", booking_count)
-        ai_data = {
-            'user': user_id,
-            'date': formatted_date,
-            'start_time': formatted_start_time,
-            'end_time': formatted_end_time,
-            'price': price,
-            'turf': turf_id,
-            'booking_count':booking_count
-        }
+#         booking_count = TurfBooking.objects.filter(user=user_id, date__gte=three_months).count()
+#         print("BOOKING COUNT IN LAST 3 MONTHS IS ", booking_count)
+#         ai_data = {
+#             'user': user_id,
+#             'date': formatted_date,
+#             'start_time': formatted_start_time,
+#             'end_time': formatted_end_time,
+#             'price': price,
+#             'turf': turf_id,
+#             'booking_count':booking_count
+#         }
 
-        # Initialize ai_response here
-        ai_response = None
+#         # Initialize ai_response here
+#         ai_response = None
 
-        try:
-            # Make a POST request to the AI service
-            ai_response = requests.post(ai_endpoint, json=ai_data)
-            ai_response.raise_for_status()  # Raise an exception for bad responses
+#         try:
+#             # Make a POST request to the AI service
+#             ai_response = requests.post(ai_endpoint, json=ai_data)
+#             ai_response.raise_for_status()  # Raise an exception for bad responses
 
-            # Check if 'dpiscount_price' key is present in the JSON response
-            if 'discount_price' in ai_response.json():
-                # Get the modified price from the AI service response
-                modified_price = ai_response.json()['discount_price']
-                print("modified price is ", modified_price)
+#             # Check if 'dpiscount_price' key is present in the JSON response
+#             if 'discount_price' in ai_response.json():
+#                 # Get the modified price from the AI service response
+#                 modified_price = ai_response.json()['discount_price']
+#                 print("modified price is ", modified_price)
 
-                # Create a new AiTurfBookModel instance with the modified price
-                AiTurfBookModel.objects.create(
-                    user=user,
-                    date=date_obj,
-                    start_time=start_time_obj,
-                    end_time=end_time_obj,
-                    price=modified_price,
-                    turf=turf
-                )
+#                 # Create a new AiTurfBookModel instance with the modified price
+#                 AiTurfBookModel.objects.create(
+#                     user=user,
+#                     date=date_obj,
+#                     start_time=start_time_obj,
+#                     end_time=end_time_obj,
+#                     price=modified_price,
+#                     turf=turf
+#                 )
 
-                # Return the modified price to the frontend
-                return Response({'modified_price': modified_price, 'date': date_obj, 'start_time': start_time_obj,
-                                 'end_time': end_time_obj, 'turf': turf.id, 'user': user.id},
-                                status=status.HTTP_200_OK)
-            else:
-                # Print the entire response content for debugging
-                print(f"Unexpected response format. Response content: {ai_response.content}")
+#                 # Return the modified price to the frontend
+#                 return Response({'modified_price': modified_price, 'date': date_obj, 'start_time': start_time_obj,
+#                                  'end_time': end_time_obj, 'turf': turf.id, 'user': user.id},
+#                                 status=status.HTTP_200_OK)
+#             else:
+#                 # Print the entire response content for debugging
+#                 print(f"Unexpected response format. Response content: {ai_response.content}")
 
-                # Handle the case where 'discount_price' key is not present
-                return Response({'error': 'Invalid response format'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#                 # Handle the case where 'discount_price' key is not present
+#                 return Response({'error': 'Invalid response format'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        except requests.RequestException as e:
-            # Log the error and print the response content
-            print(f"Error: {str(e)}")
-            print(f"Response content: {ai_response.content if ai_response else 'No response'}")
+#         except requests.RequestException as e:
+#             # Log the error and print the response content
+#             print(f"Error: {str(e)}")
+#             print(f"Response content: {ai_response.content if ai_response else 'No response'}")
 
-            # Return a more informative response
-            return Response({'error': 'Error making request to AI service'},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+#             # Return a more informative response
+#             return Response({'error': 'Error making request to AI service'},
+#                             status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+
+
+#-------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------------
     
 # class TurfDisplayView(generics.ListAPIView):
 #     queryset = Turf.objects.all()
@@ -251,9 +419,11 @@ class TeamView(generics.ListCreateAPIView):
     def post(self, request):
         serializer = TeamSerializer(data = request.data)
         if serializer.is_valid():
-            serializer.save()
+            team = serializer.save()
+            print(team)
             return Response({'status': "success",
                             'message': "Team adding Successful",
+                            'team': team.id,
                             'response_code': status.HTTP_200_OK,
                             'data': serializer.data})
         else:
@@ -269,12 +439,15 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TeamSerializer
     # lookup_field = "id"
     
-    def get(self, request, name):
-        self.queryset = self.queryset.filter(id = name).first()
+    def get(self, request, pk):
+        self.queryset = self.queryset.filter(id = pk).first()
+        team_id = self.queryset.id
+        print(team_id)
         if self.queryset:
             serializer = self.get_serializer(self.queryset)
             return Response({'status': "success",
                             'message': "Team fetching Successful",
+                            'team_id': team_id,
                             'response_code': status.HTTP_200_OK,
                             'data': serializer.data})
         else:
@@ -284,8 +457,8 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
                             'response_code': status.HTTP_404_NOT_FOUND,
                             'data': data})
         
-    def put(self, request, name):
-        self.queryset = self.queryset.filter(id = name).first()
+    def put(self, request, pk):
+        self.queryset = self.queryset.filter(id = pk).first()
         if self.queryset:
             serializer = self.get_serializer(self.queryset, data=request.data)
             if serializer.is_valid():
@@ -308,8 +481,8 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
                             'response_code': status.HTTP_404_NOT_FOUND,
                             'data': data})
         
-    def delete(self, request, name):
-        self.queryset = self.queryset.filter(id = name).first()
+    def delete(self, request, pk):
+        self.queryset = self.queryset.filter(id = pk).first()
         self.perform_destroy(self.queryset)
         return Response({'status': "success",
                          'message': "deleted successfully",
@@ -317,30 +490,97 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
         
         
     
+# class PlayerView(generics.ListCreateAPIView):
+#     queryset = Player.objects.all()
+#     serializer_class = PlayerSerializer
+    
+#     def perform_create(self, serializer):
+#     # def post(self, serializer):
+#         print(serializer)
+#         team_id = self.request.data.get('team')
+#         print('Teamid :',team_id)
+#         print(self.request.data)
+
+#         if team_id:
+#             # team_strength = Team.objects.get(id=team_id).team_strength
+#             team_strength_query = Team.objects.filter(id=team_id).first()
+#             if team_strength_query:
+#                 team_strength = team_strength_query.team_strength
+#                 players_count = Player.objects.filter(team_id=team_id).count()
+
+#                 if players_count >= team_strength:
+#                     print('checked')
+#                     # return Response({'status': "error",
+#                     #                 'message': "Team has reached the maximum number of players.",
+#                     #                 'response_code': status.HTTP_403_FORBIDDEN,
+#                     #                 'team_strength': team_strength})
+#                     response_data = {
+#                         'status': "error",
+#                         'message': 'Team has reached the maximum number of players.',
+#                         'response_code': status.HTTP_403_FORBIDDEN,
+#                         'team_strength': team_strength
+#                     }
+#                     raise serializers.ValidationError(response_data)
+#                 else:
+#                     print('entered in else')
+#                     serializer.save()
+#                     # return Response({'status': "success",
+#                     #                 'message': "Player added successfully",
+#                     #                 'response_code': status.HTTP_200_OK,
+#                     #                 'team_strength': team_strength})
+#                     response_data = {
+#                         'status': "success",
+#                         'message': 'Player added successfully',
+#                         'response_code': status.HTTP_200_OK,
+#                         'team_strength': team_strength,
+#                         'data': serializer.data
+#                     }
+#                     Response(response_data)
+#             else:
+#                 # return Response({'status': "error",
+#                 #                 'message': "not found",
+#                 #                 'response_code': status.HTTP_404_NOT_FOUND})
+#                 response_data = {
+#                         'status': "error",
+#                         'message': 'Team not found',
+#                         'response_code': status.HTTP_404_NOT_FOUND
+#                         }
+#                 raise serializers.ValidationError(response_data)
+#         else:
+#             serializer.save()
+#             response_data = {
+#                 'status': "success",
+#                 'message': 'Saved but no team selected',
+#                 'response_code': status.HTTP_200_OK
+#             }
+#             raise serializers.ValidationError(response_data)
+
+
+
 class PlayerView(generics.ListCreateAPIView):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
     
     def perform_create(self, serializer):
-    # def post(self, serializer):
-        print(serializer)
+        player_pic = self.request.data.get('player_pic')
+        print('PLAYER PIC :', player_pic)
+
+        processed_image = process_profile_pic_with_ai(player_pic)
+        print('ENTERED IN :',processed_image)
+
+        if processed_image:
+            processed_image_content = processed_image
+            serializer.validated_data['player_pic'] = processed_image_content
+            
         team_id = self.request.data.get('team')
-        print('Teamid :',team_id)
-        print(self.request.data)
 
         if team_id:
-            # team_strength = Team.objects.get(id=team_id).team_strength
             team_strength_query = Team.objects.filter(id=team_id).first()
             if team_strength_query:
                 team_strength = team_strength_query.team_strength
                 players_count = Player.objects.filter(team_id=team_id).count()
 
                 if players_count >= team_strength:
-                    print('checked')
-                    # return Response({'status': "error",
-                    #                 'message': "Team has reached the maximum number of players.",
-                    #                 'response_code': status.HTTP_403_FORBIDDEN,
-                    #                 'team_strength': team_strength})
                     response_data = {
                         'status': "error",
                         'message': 'Team has reached the maximum number of players.',
@@ -349,12 +589,7 @@ class PlayerView(generics.ListCreateAPIView):
                     }
                     raise serializers.ValidationError(response_data)
                 else:
-                    print('entered in else')
                     serializer.save()
-                    # return Response({'status': "success",
-                    #                 'message': "Player added successfully",
-                    #                 'response_code': status.HTTP_200_OK,
-                    #                 'team_strength': team_strength})
                     response_data = {
                         'status': "success",
                         'message': 'Player added successfully',
@@ -362,35 +597,62 @@ class PlayerView(generics.ListCreateAPIView):
                         'team_strength': team_strength,
                         'data': serializer.data
                     }
-                    Response(response_data)
+                    return Response(response_data)
             else:
-                # return Response({'status': "error",
-                #                 'message': "not found",
-                #                 'response_code': status.HTTP_404_NOT_FOUND})
                 response_data = {
-                        'status': "error",
-                        'message': 'Team not found',
-                        'response_code': status.HTTP_404_NOT_FOUND
-                        }
+                    'status': "error",
+                    'message': 'Team not found',
+                    'response_code': status.HTTP_404_NOT_FOUND
+                }
                 raise serializers.ValidationError(response_data)
         else:
             response_data = {
-                'status': "error",
-                'message': 'Team ID not provided',
-                'response_code': status.HTTP_400_BAD_REQUEST
+                'status': "success",
+                'message': 'Saved but no team selected',
+                'data': serializer.data,
+                'response_code': status.HTTP_200_OK
             }
             raise serializers.ValidationError(response_data)
+
+def process_profile_pic_with_ai(player_pic):
+    try:
+        ai_service_endpoint = 'https://5cdd-116-68-110-250.ngrok-free.app/formation_img'
+        
+        files = {'image': ('player_pic.png', player_pic.read())}
+        print('FILES :',files)
+        
+        response = requests.post(ai_service_endpoint, files=files)
+        print('RESPONSE :',response)
+        print('HI')
+
+        if response.status_code == 200:
+            processed_image_bytes = response.content
+            print(processed_image_bytes)
+
+            processed_image_content = ContentFile(processed_image_bytes, name='processed_image.jpg')
+            print('IN PROCESSED IMAGE', processed_image_content)
+
+            return processed_image_content
+        else:
+            print(f"Error: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return None
     
 class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
     # lookup_field = "name"
     
-    def get(self, request, name):
-        self.queryset = self.queryset.filter(id = name).first()
+    def get(self, request, pk):
+        self.queryset = self.queryset.filter(id = pk).first()
         if self.queryset:
             serializer = self.get_serializer(self.queryset)
-            return Response({'data': serializer.data})
+            return Response({'status': "success",
+                            'message': "fetched successfully",
+                            'response_code': status.HTTP_204_NO_CONTENT,
+                            'data': serializer.data})
         else:
             data = serializer.errors
             return Response({'status': "error",
@@ -398,8 +660,8 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
                             'response_code': status.HTTP_403_FORBIDDEN,
                             'data': data})
         
-    def put(self, request, name):
-        self.queryset = self.queryset.filter(id = name).first()
+    def put(self, request, pk):
+        self.queryset = self.queryset.filter(id = pk).first()
         serializer = self.get_serializer(self.queryset, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -415,8 +677,8 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
                                 'data': data})
             
         
-    def delete(self,request,name):
-        self.queryset = self.queryset.filter(id = name).first()
+    def delete(self,request,pk):
+        self.queryset = self.queryset.filter(id = pk).first()
         self.perform_destroy(self.queryset)
         return Response({'status': "success",
                          'message': "deleted successfully",
@@ -432,7 +694,10 @@ class GalleryView(generics.ListCreateAPIView):
     def get(self, request):
         gallery = Gallery.objects.all()
         serializers = GallerySerializer(gallery, many=True)
-        return Response(serializers.data)
+        return Response({'status': "success",
+                            'message': "fetched successfully",
+                            'response_code': status.HTTP_204_NO_CONTENT,
+                            'data': serializers.data})
     
     def post(self,request):
         serializer = GallerySerializer(data=request.data)
@@ -442,7 +707,8 @@ class GalleryView(generics.ListCreateAPIView):
             print(request.user)
             return Response({'status': "success",
                              'message': "Image uploaded successfully",
-                             'response_code': status.HTTP_200_OK})
+                             'response_code': status.HTTP_200_OK,
+                             'data': ''})
         else: 
             data = serializer.errors
             return Response({'status': "error",
@@ -495,6 +761,24 @@ class ProfileUpdateView(APIView):
                             'response_code': status.HTTP_400_BAD_REQUEST,
                             'data': data})
             
+            
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            if request.user.check_password(serializer.validated_data['old_password']):
+                request.user.set_password(serializer.validated_data['new_password'])
+                request.user.save()
+                return Response({'detail': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'detail': 'Old password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            
+# class SendInvitationView(generics.CreateAPIView):
+#     serializer_class = InvitationSerializer
 
 class UserDelete(generics.DestroyAPIView):
     
@@ -509,63 +793,253 @@ class UserDelete(generics.DestroyAPIView):
             return Response({'status': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
 
             
-class SendInvitationView(generics.CreateAPIView):
+class TeamInvitationView(generics.CreateAPIView):
     serializer_class = TeamInvitationSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        team_id = serializer.validated_data['team_id']
-        player_id = serializer.validated_data['player_id']
+        team_id = request.data.get('team')
+        player_id = request.data.get('player')
+        
+        # user_id = request.data.get('user')  # Add user ID to the request data
 
         try:
-            team = Team.objects.get(id=team_id)
-            player = Player.objects.get(id=player_id)
+            team = Team.objects.filter(pk=team_id).first()
+            player = Player.objects.filter(pk=player_id).first()
+            # user = Player.objects.get(pk=user_id)  # Fetch the user
+            my_team_players = team.players.all()
+            print(my_team_players)
         except (Team.DoesNotExist, Player.DoesNotExist):
-            return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'status': "error",
+                            'message': "Invalid team, player, or user ID",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
 
-        if team.players.count() < team.team_strength:
-            # Assuming you have a field in your Player model to track invitations
-            player.invitation_pending = True
-            player.save()
+        if team.players.count() >= team.team_strength:
+            team_under = team.players.count()
+            print(team_under)
+            return Response({'status': "error",
+                            'message': "Team is full",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+            
 
-            # You might want to send a notification to the player here
+        if team.players.filter(pk=player_id).exists():
+            return Response({'status': "error",
+                            'message': "Player is already in the team",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
 
-            return Response({'detail': 'Invitation sent successfully'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'detail': 'Team is already full'}, status=status.HTTP_400_BAD_REQUEST)
+        # Check if the user sending the invitation is a team member
+        # if user not in team.players.all():
+        #     return Response({"error": "You are not a member of this team"}, status=status.HTTP_403_FORBIDDEN)
 
+        invitation = TeamInvitation.objects.create(team=team, player=player)
+        return Response({'status': "success",
+                            'message': "invitation successfully",
+                            "invitation_id": invitation.id,
+                            'response_code': status.HTTP_201_CREATED,
+                            'data': ''})
 
-class AcceptInvitationView(generics.RetrieveUpdateAPIView):
-    serializer_class = PlayerSerializer
-    
-    def get_object(self):
-        player_id = self.kwargs.get('pk')
-        try:
-            return Player.objects.get(id=player_id)
-        except Player.DoesNotExist:
-            return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
+class AcceptInvitationView(generics.UpdateAPIView):
+    queryset = TeamInvitation.objects.all()
+    serializer_class = TeamInvitationSerializer
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         print(instance)
-        team = request.data.get('team')
-        print(team)
+
+        if instance.is_accepted:
+            return Response({'status': "error",
+                            'message': "Invitation has already been accepted",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+        instance.team.players.add(instance.player)
+        player_instance = instance.player
+        team_instance = instance.team
+        print(team_instance)
+        print(player_instance)
+        instance.is_accepted = True
+        print('HI')
+        instance.save()
+
+        return Response({'status': "success",
+                            'message': "Invitation accepted",
+                            'response_code': status.HTTP_200_OK,
+                            'data': ''})
+    
+    
+class MatchInvitationView(generics.CreateAPIView):
+    serializer_class = MatchInvitationSerializer
+    
+    def create(self, request, *args, **kwargs):
+        
+        # data=request.data
+        # data['sender_team']
+        
+        team1_id = request.data.get('sender_team')
         print(request.data)
+        team2_id = request.data.get('receiver_team')
+        print(team1_id)
+        print(team2_id)
+        
+        try:
+            team1 = Team.objects.filter(pk = team1_id).first()
+            team2 = Team.objects.filter(pk = team2_id).first()
+            team1_players = team1.players.all()
+            team2_players = team2.players.all()
+                
+            common_player = set(team1_players.values_list('id', flat=True)).intersection(team2_players.values_list('id', flat=True))
+            print(common_player)
 
-        if instance.invitation_pending:
-            instance.team = Team.objects.get(id=team)
-            instance.invitation_pending = False
-            instance.save()
-
-            # You might want to send a notification to the team that the player has accepted the invitation
-
-            return Response({'detail': 'Invitation accepted successfully'}, status=status.HTTP_200_OK)
+            print(team1_players)
+            print(team2_players)
+        except(Team.DoesNotExist):
+            return Response({'status': "error",
+                            'message': "Invalid team",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+        
+        if team1_id == team2_id:
+            return Response({'status': "error",
+                            'message': "Selected teams are same",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+        
+        if common_player:
+            return Response({'status': "error",
+                            'message': "Selected teams have same players",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+        
+        if team1.team_strength == team2.team_strength:
+            print(team1.team_strength)
+            print(team2.team_strength)
+            
+            team_invitation = MatchInvitation.objects.create(sender_team = team1, receiver_team = team2)
+            return Response({'status': "success",
+                            'message': "invitation successfully",
+                            "invitation_id": team_invitation.id,
+                            'response_code': status.HTTP_201_CREATED,
+                            'data': ''})
         else:
-            return Response({'detail': 'No pending invitation for this player'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        
+            return Response({'status': "error",
+                            'message': "team strength is not same, invitation unsuccessfully",
+
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+    
+class MatchAcceptInvitationView(generics.UpdateAPIView):
+    queryset = MatchInvitation.objects.all()
+    serializer_class = MatchInvitationSerializer
+    
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        print(instance)
+        if instance.is_accepted:
+            return Response({'status': "error",
+                            'message': "Invitation has already been accepted",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+        else:
+            instance.team1 = instance.sender_team
+            instance.team2 = instance.receiver_team
+            instance.is_accepted = True
+            instance.save()
+            return Response({'status': "success",
+                            'message': "Invitation accepted",
+                            'response_code': status.HTTP_200_OK,
+                            'data': ''})
+ 
+ 
+class CreateTurfRating(generics.ListCreateAPIView):
+    queryset = TurfRating.objects.all()
+    serializer_class = TurfRatingSerializer
+    
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = TurfRatingSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def create(self, request):
+        data = request.data
+        user = data.get('userid')
+        turf_id = data.get('turfid')
+
+        if user:
+            turf = Turf.objects.filter(id=turf_id).first()
+            serializer = TurfRatingSerializer(data=request.data)
+            
+            if serializer.is_valid():
+                # Save the TurfRating
+                serializer.save()
+                
+                # Get the AI response from the external URL
+                ai_url = "https://b2cf-116-68-110-250.ngrok-free.app/sentiment"
+                ai_response = requests.get(ai_url).json()
+                print(ai_response)
+                
+                turf_rating_data = [item for item in ai_response if item.get('turfid') == int(turf_id)]
+                print(turf_rating_data)
+
+
+                if turf_rating_data and 'weighted_rating' in turf_rating_data[0]:
+                    print('HI YOU ARE IN')
+                    weighted_rating = turf_rating_data[0]['weighted_rating']
+                    print("weighted rating is ", weighted_rating)
+                    turf.ai_rating = weighted_rating
+                    turf.save()
+
+                    return Response({'status': 'saved'})
+                else:
+                    return Response({'status': 'unsaved'})
+            else:
+                return Response({'status': 'unsaved'})
+
+ 
+
+# class CreateTurfRating(generics.CreateAPIView):
+#     queryset = TurfRating.objects.all()
+#     serializer_class = TurfRatingSerializer
+
+#     def create(self, request, *args, **kwargs):
+#         data = request.data
+#         print(data)
+#         user = data.get('userid')
+#         print(user)
+#         turf_id = data.get('turfid')
+#         print(turf_id)
+
+#         if user:
+#             # Assuming you have an AI service endpoint
+#             ai_endpoint = 'https://4905-116-68-110-250.ngrok-free.app/sentiment'
+            
+#             # Call the AI service
+#             ai_response = requests.post(ai_endpoint, json=data)
+#             print('Response :',ai_response)
+#             # Check if the AI service response is successful
+#             if ai_response.status_code == 200:
+#                 print('HI ENTERED')
+#                 ai_data = ai_response.json()
+#                 print(ai_data)
+#                 # Update the request data with the AI response
+#                 data.update(ai_data)
+
+#                 # Continue with the rest of your logic
+#                 turf = Turf.objects.filter(id=turf_id).first()
+#                 print(turf)
+#                 serializer = TurfRatingSerializer(data=data)
+#                 if serializer.is_valid():
+#                     serializer.save()
+#                     return Response({'status': 'saved'})
+#                 else:
+#                     return Response({'status': 'unsaved'})
+#             else:
+#                 # Handle the case when the AI service request is not successful
+#                 return Response({'status': 'ai_service_error'})
+#         else:
+#             # Handle the case when user is not provided
+#             return Response({'status': 'user_not_provided'})    
+               
 class RewardPoints(generics.ListAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsUserOnly]
@@ -591,7 +1065,10 @@ class RewardPoints(generics.ListAPIView):
             'reward_points': self.serializer_class(self.get_queryset(), many=True).data
         }
 
-        return Response({'status':"success",'message': "Reward points listed successfully",'response_code': status.HTTP_201_CREATED,"data":response_data})
+        return Response({'status': "success",
+                        'message': "listed successfully",
+                        'response_code': status.HTTP_200_OK,
+                        'data': response_data})
     
     
     

@@ -50,12 +50,13 @@ class Turf(models.Model):
     owner = models.ForeignKey(Owner, on_delete=models.CASCADE)
     name = models.CharField(max_length=55)
     location = models.CharField(max_length=55)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.FloatField(default=0)
     image = models.ImageField(upload_to='image/') 
     description = models.CharField(max_length=255)
     amenity = models.ManyToManyField('Amenity')
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
+    ai_rating = models.FloatField(null=True)
     # is_active = models.BooleanField(default=False)
 
     def __str__(self):
@@ -173,13 +174,9 @@ class Profile(models.Model):
     def __str__(self):
         return self.profile_name
 
-
-
 class UserBookingHistory(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
     turf_booked = models.ForeignKey(TurfBooking, on_delete=models.CASCADE)
-    
-    
     
     
 class RedeemRewardsModel(models.Model):
@@ -191,3 +188,12 @@ class RedeemRewardsModel(models.Model):
         return f'{self.user} has redeemed {self.reward} on {self.redeemed_date}'
 
 
+class TurfRating(models.Model):
+    turfid = models.ForeignKey(Turf, on_delete=models.CASCADE)
+    userid = models.ForeignKey(Abstract, on_delete=models.CASCADE)
+    rating = models.PositiveIntegerField(default=0)
+    review = models.CharField(max_length=255)
+    
+    def __str__(self):
+        return f'{self.turfid.name} {self.userid}'
+        

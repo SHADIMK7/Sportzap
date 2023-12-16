@@ -56,7 +56,7 @@ class Turf(models.Model):
     amenity = models.ManyToManyField('Amenity')
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
-    ai_rating = models.FloatField(null=True)
+    # ai_rating = models.FloatField(null=True)
     # is_active = models.BooleanField(default=False)
 
     def __str__(self):

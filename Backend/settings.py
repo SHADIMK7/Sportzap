@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'owner_app',
     'user_app',
     'admin_app',
+    'import_export'
     # 'django.contrib.gis',
 
 ]
@@ -114,7 +115,7 @@ DATABASES = {
     }
 }
 
-print("getttttttt",os.getenv("DB_NAME"))
+# print("getttttttt",os.getenv("DB_NAME"))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',

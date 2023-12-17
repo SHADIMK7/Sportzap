@@ -37,6 +37,8 @@ class Player(models.Model):
     player_position = models.CharField(max_length=10)
     teams = models.ManyToManyField('Team', related_name='players')
     invitation_pending = models.BooleanField(default=False) 
+    player_longitude = models.FloatField(null=True)
+    player_latitude = models.FloatField(null=True)
     
     def __str__(self):
         return self.player_name

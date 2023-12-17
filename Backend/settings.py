@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'owner_app',
     'user_app',
     'admin_app',
+    'import_export',
+
     # 'django.contrib.gis',
 
 ]

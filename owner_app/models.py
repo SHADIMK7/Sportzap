@@ -18,7 +18,6 @@ class Abstract(AbstractUser):
     usertype = models.CharField(choices=TYPE_CHOICES, default='customer' ,max_length=30)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
-    u_id = models.IntegerField(default=0)
     def __str__(self):
         return self.username
     
@@ -50,7 +49,7 @@ class Turf(models.Model):
     owner = models.ForeignKey(Owner, on_delete=models.CASCADE)
     name = models.CharField(max_length=55)
     location = models.CharField(max_length=55)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.FloatField(default=0)
     image = models.ImageField(upload_to='image/') 
     description = models.CharField(max_length=255)
     amenity = models.ManyToManyField('Amenity')

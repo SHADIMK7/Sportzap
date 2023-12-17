@@ -75,7 +75,7 @@ class TurfDisplaySerializer(serializers.ModelSerializer):
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
-        fields = ['player_name', 'player_skill', 'player_pic', 'player_position']
+        fields = ['id', 'player_name', 'player_skill', 'player_pic', 'player_position']
 
         
 class TeamSerializer(serializers.ModelSerializer):
@@ -89,6 +89,15 @@ class TeamInvitationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TeamInvitation
+        fields = '__all__'
+        
+        
+class MatchInvitationSerializer(serializers.ModelSerializer):
+    sender = TeamSerializer(read_only=True)
+    receiver = TeamSerializer(read_only=True)
+    
+    class Meta:
+        model = MatchInvitation
         fields = '__all__'
         
     # def create(self, validated_data):
@@ -168,7 +177,9 @@ class RedeemRewardsSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = RedeemRewardsModel
-        fields = ['user', 'required_points', 'reward']
+        fields = ['user', 'required_points', 'reward', 'redeemed_date']
+        
+
     
     def get_required_points(self, object):
         if isinstance(object, RedeemRewardsModel):
@@ -195,7 +206,7 @@ class GallerySerializer(serializers.ModelSerializer):
   
   
         
-User = get_user_model()      
+User = get_user_model() # FOR GETTING USER FROM ABSTRACT MODEL  
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -210,3 +221,19 @@ class ProfileCombinedSerializer(serializers.Serializer):
     abstract = UserProfileSerializer()
     profile = ProfileSerializer()
     
+    
+class TurfRatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TurfRating
+        fields = '__all__'
+        
+        
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    
+    
+class ChargeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Charge
+        fields = '__all__'

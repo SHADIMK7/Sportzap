@@ -51,8 +51,12 @@ INSTALLED_APPS = [
     'owner_app',
     'user_app',
     'admin_app',
+<<<<<<< HEAD
     'import_export',
 
+=======
+    'import_export'
+>>>>>>> 859f3cf31588934af9da68c323e4a91a727acf60
     # 'django.contrib.gis',
 
 ]
@@ -116,17 +120,17 @@ DATABASES = {
     }
 }
 
-print("getttttttt",os.getenv("DB_NAME"))
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME':os.getenv("DB_NAME"),
-#         'USER':os.getenv("DB_USER"),
-#         'PASSWORD':os.getenv("DB_PASSWORD"),
-#         'HOST':os.getenv("DB_HOST"),
-#         'PORT':os.getenv("DB_PORT"),
-#    }
-# }
+# print("getttttttt",os.getenv("DB_NAME"))
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME':os.getenv("DB_NAME"),
+        'USER':os.getenv("DB_USER"),
+        'PASSWORD':os.getenv("DB_PASSWORD"),
+        'HOST':os.getenv("DB_HOST"),
+        'PORT':os.getenv("DB_PORT"),
+   }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -187,3 +191,6 @@ REST_FRAMEWORK = {
 # ]
 
 
+PAYPAL_CLIENT_ID = 'AT8Ol44vQsNQVrEzvRNFSWHhYqfZOoOvA4c29snaxBG3zxRVF1rKo7lr9y3hElda_fYVZIO06RDv2xZ9'
+PAYPAL_CLIENT_SECRET = 'EPUZ3pwPiy4HSvEOc1NJUYSUiG_Mw1wqjfcXpULR6LXJtUHFE3AQuM62WR586pHP-wQ5fLR5jETKWb2u'
+PAYPAL_MODE = 'sandbox'

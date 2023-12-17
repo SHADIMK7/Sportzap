@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from .serializers  import *
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework import status
@@ -10,6 +10,9 @@ from django.contrib.auth import authenticate
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOwnerOnly
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.views import APIView
+
 
 
 # Create your views here.
@@ -75,7 +78,7 @@ class Registration(generics.CreateAPIView):
                 "Phone number": account.abstract.phone_no,
                 "token": token_key
             }
-            return Response({'status':"success",'message': data,'response_code': status.HTTP_201_CREATED,})
+            return Response({'status':"success",'response_code': status.HTTP_201_CREATED,'data': data,})
         else:
             data = serializer.errors
 
@@ -113,6 +116,11 @@ class TurfDisplay(generics.ListAPIView):
     def get_queryset(self):
         pk = self.kwargs['pk']
         return Turf.objects.filter(pk=pk)
+
+
+class TurfDisplayAll(generics.ListAPIView):
+    serializer_class = TurfSerializer
+    queryset = Turf.objects.all()
         
 class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
     authentication_classes = [TokenAuthentication]
@@ -149,8 +157,8 @@ class TurfManagement(generics.RetrieveUpdateDestroyAPIView):
         return Response({
             'status': "success",
             'message': "Turf updated successfully",
-            'data': response.data,
             'response_code': status.HTTP_200_OK,
+            'data': response.data,
         })
     
     def destroy(self, request, *args, **kwargs):
@@ -186,14 +194,36 @@ class PaymentHistory(generics.ListAPIView):
         
 
 class MatchRating(generics.ListCreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsOwnerOnly]
     serializer_class = MatchRatingSerializer
     
     def get_queryset(self):
         pk = self.kwargs['pk']
-        return MatchRatingModel.objects.filter(turf_booking__pk=pk)   
-    
+        owner = self.request.user.owner_set.first()
+        
+        if owner and owner.pk == int(pk):
+            return MatchRatingModel.objects.filter(turf__owner=pk)
+        else:
+            response_data = {
+                'status': "failed",
+                'reason': "You are not the owner of this turf",
+                'response_code': status.HTTP_403_FORBIDDEN,
+            }
+            raise PermissionDenied(response_data)
+
     def post(self, request, *args, **kwargs):
         pk = self.kwargs.get('pk')
+        
+        owner = request.user.owner_set.first() 
+        if not owner or owner.pk != int(pk):
+            response_data = {
+                'status': "failed",
+                'reason': "You are not the owner of this turf",
+                'response_code': status.HTTP_403_FORBIDDEN,
+            }
+            return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+
         serializer = self.serializer_class(data=request.data, context={'owner_pk': pk})
         
         if serializer.is_valid():
@@ -206,10 +236,9 @@ class MatchRating(generics.ListCreateAPIView):
                 'data': serializer.data,
             }
             
-            return Response(response_data)
+            return Response({'status':"success",'message': "Match rated successfully",'response_code': status.HTTP_201_CREATED,"data":response_data})
         else:
-            return Response(serializer.errors)
-
+            return Response({'status': "failed",'message': "Serializer is not valid",'response_code':status.HTTP_400_BAD_REQUEST})
     
     
 # class PaymentHistory(generics.ListCreateAPIView):
@@ -229,3 +258,38 @@ class MatchRating(generics.ListCreateAPIView):
 #             return Response({'message': 'Payment added to history.'}, status=status.HTTP_200_OK)
 #         else:
 #             return Response({'message': 'Booking has not expired yet.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class AmenityView(generics.ListAPIView):
+    serializer_class = AmenitySerializer
+    queryset = Amenity.objects.all()
+    
+
+    
+class OwnerDelete(generics.DestroyAPIView):
+    
+    def delete(self, request, *args, **kwargs):
+        user = self.request.user
+
+        owner = user
+        if owner:
+            owner.delete()
+            return Response({'status': 'success'})
+        else:
+            return Response({'status': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        
+class ChangePasswordOwner(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            if request.user.check_password(serializer.validated_data['old_password']):
+                request.user.set_password(serializer.validated_data['new_password'])
+                request.user.save()
+                return Response({'detail': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'detail': 'Old password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

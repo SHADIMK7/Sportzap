@@ -63,7 +63,7 @@ class CustomLoginView(ObtainAuthToken):
                 'is_admin': user.is_superuser,
                 'user_id': user_id
             }
-            print("user id is ", user_id)
+            # print("user id is ", user_id)
 
             return Response(response_data, status=status.HTTP_200_OK)
         else:

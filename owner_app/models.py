@@ -171,8 +171,8 @@ class Profile(models.Model):
     profile_name = models.CharField(max_length=55, null=True)
     profile_pic = models.ImageField(upload_to='profile_image/', null=True)
     
-    def __str__(self):
-        return self.profile_name
+    # def __str__(self):
+    #     return self.user
 
 class UserBookingHistory(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)

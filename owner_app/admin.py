@@ -19,3 +19,4 @@ admin.site.register(RedeemRewardsModel)
 # admin.site.register(TurfPriceUpdateModel)
 admin.site.register(AiTurfBookModel)
 admin.site.register(TurfRating)
+

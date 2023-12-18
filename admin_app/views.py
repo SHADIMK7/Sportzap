@@ -12,6 +12,7 @@ from admin_app.serializers import *
 from rest_framework.authentication import TokenAuthentication
 from admin_app.models import Leaderboard
 from rest_framework.permissions import IsAdminUser
+from rest_framework.pagination import PageNumberPagination
 
 
 class OwnerList(generics.ListAPIView):
@@ -52,17 +53,16 @@ class OwnerRetrieveDelete(generics.RetrieveDestroyAPIView):
                return Response({"status": "error", "message": "Owner does not exist", "response_code": status.HTTP_404_NOT_FOUND})
     
     def delete(self, request,pk):
-        try:
+       
 
-           instance = self.get_instance(pk)
+            instance = self.get_instance(pk)
+            if instance is not None:
+                instance.delete()
+                return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
+            else:
+               return Response({"status": "error", "message": "Owner does not exist", "response_code": status.HTTP_404_NOT_FOUND})
+    
 
-           instance.delete()
-           return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
-        except Owner.DoesNotExist:
-            return Response({"status": "error", "message": "Owner does not exist", "response_code": status.HTTP_404_NOT_FOUND})
-
-
-from rest_framework.pagination import PageNumberPagination
 
 class CustomPagination(PageNumberPagination):
     page_size = 3 
@@ -96,25 +96,44 @@ class TurfActiveDelete(generics.RetrieveUpdateDestroyAPIView):
     queryset = Turf.objects.all()
     serializer_class = TurfUpdateSerializer
 
-    def get(self,request, pk):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+    def get_instance(self, pk):
+        try:
+            return self.get_queryset().get(pk=pk)
+        except Turf.DoesNotExist:
+            return None
 
-    def delete(self, request, pk):
-        instance = self.get_object() 
-        instance.delete()
-        return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
-     
-    def patch(self, request, pk):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
+    def get(self,request, pk):
+        instance = self.get_instance(pk)
+        if instance is not None:
+
+            serializer = self.get_serializer(instance)
             return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+               return Response({"status": "error", "message": "Turf does not exist", "response_code": status.HTTP_404_NOT_FOUND})
+    
+    def delete(self, request, pk):
+        instance = self.get_instance(pk) 
+        if instance is not None:
+
+            instance.delete()
+            return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
+        else:
+               return Response({"status": "error", "message": "Turf does not exist", "response_code": status.HTTP_404_NOT_FOUND})
+    
+    def patch(self, request, pk):
+        instance = self.get_instance(pk)
+        if instance is not None:
+
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+               return Response({"status": "error", "message": "Turf does not exist", "response_code": status.HTTP_404_NOT_FOUND})
     
       
+
 class CustomerList(generics.ListAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminUser]
@@ -133,18 +152,30 @@ class CustomerListDelete(generics.RetrieveDestroyAPIView):
 
     queryset = Customer.objects.all()
     serializer_class = CustomerListSerializer
-    
+    def get_instance(self, pk):
+        try:
+            return self.get_queryset().get(pk=pk)
+        except Customer.DoesNotExist:
+            return None
+
     def get(self,request,pk):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+        instance = self.get_instance(pk)
+        if instance is not None:
 
+            serializer = self.get_serializer(instance)
+            return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+        else:
+               return Response({"status": "error", "message": "Customer does not exist", "response_code": status.HTTP_404_NOT_FOUND})
+    
     def delete(self, request, pk):
-        instance = self.get_object()
-        instance.delete()
-        # self.perform_destroy(instance)
-        return Response({"status": "success", "message": "User deleted Successfully", "response_code": status.HTTP_200_OK})
+        instance = self.get_instance(pk)
+        if instance is not None:
 
+            instance.delete()
+            return Response({"status": "success", "message": "User deleted Successfully", "response_code": status.HTTP_200_OK})
+        else:
+               return Response({"status": "error", "message": "Customer does not exist", "response_code": status.HTTP_404_NOT_FOUND})
+    
 
 class TurfBookingView(generics.ListAPIView):
     authentication_classes = [TokenAuthentication]
@@ -158,23 +189,35 @@ class TurfBookingView(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many=True)
         return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
     
+
 class TurfBookingCancel(generics.RetrieveDestroyAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAdminUser]
 
     queryset = TurfBooking.objects.all()
     serializer_class = BookingSerializer
+    def get_instance(self, pk):
+        try:
+            return self.get_queryset().get(pk=pk)
+        except TurfBooking.DoesNotExist:
+            return None
 
     def get(self,request,pk):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
-
+        instance = self.get_instance(pk)
+        if instance is not None:
+            serializer = self.get_serializer(instance)
+            return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+        else:
+               return Response({"status": "error", "message": "Booking does not exist", "response_code": status.HTTP_404_NOT_FOUND})
+    
     def delete(self, request,pk):
-        instance = self.get_object()
-        instance.delete()
-        return Response( {"status": "success", "message": "Turf booking cancelled", "response_code" :status.HTTP_200_OK})
-
+        instance = self.get_instance(pk)
+        if instance is not None:
+            instance.delete()
+            return Response( {"status": "success", "message": "Turf booking cancelled", "response_code" :status.HTTP_200_OK})
+        else:
+               return Response({"status": "error", "message": "Booking does not exist", "response_code": status.HTTP_404_NOT_FOUND})
+    
 
 class TransactionHistory(generics.ListAPIView):
     authentication_classes = [TokenAuthentication]
@@ -290,6 +333,7 @@ class TurfWeeklyIncomeView(APIView):
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta 
 
+
 class TurfMonthlyIncomeView(APIView):
     def get(self, request):
         today = datetime.now()
@@ -310,7 +354,8 @@ class TurfMonthlyIncomeView(APIView):
 
 
 
-class LeaderBoard(generics.ListAPIView):
+
+class TeamLeaderBoard(generics.ListAPIView):
     serializer_class = LeaderBoardSerializer
 
     def get_queryset(self):
@@ -364,17 +409,28 @@ class AmenityDelete(generics.RetrieveDestroyAPIView):
 
     queryset = Amenity.objects.all()
     serializer_class = AmenitySerializer
-    
-    def get(self,request, pk):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+    def get_instance(self, pk):
+        try:
+            return self.get_queryset().get(pk=pk)
+        except Amenity.DoesNotExist:
+            return None
 
+    def get(self,request, pk):
+        instance = self.get_instance(pk)
+        if instance is not None:
+            serializer = self.get_serializer(instance)
+            return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+        else:
+               return Response({"status": "error", "message": "Amenity does not exist", "response_code": status.HTTP_404_NOT_FOUND})
+    
     def delete(self, request, pk):
-        instance = self.get_object() 
-        instance.delete()
-        return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
-     
+        instance = self.get_instance(pk)
+        if instance is not None:
+            instance.delete()
+            return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
+        else:
+            return Response({"status": "error", "message": "Amenity does not exist", "response_code": status.HTTP_404_NOT_FOUND})
+    
     
 
 class RewardView(generics.ListCreateAPIView):
@@ -403,25 +459,42 @@ class RewardUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
 
     queryset = Reward.objects.all()
     serializer_class = RewardSerializer
+    def get_instance(self, pk):
+        try:
+            return self.get_queryset().get(pk=pk)
+        except Reward.DoesNotExist:
+            return None
 
     def get(self,request, pk):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
-
-    def delete(self, request, pk):
-        instance = self.get_object() 
-        instance.delete()
-        return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
-     
-    def patch(self, request, pk):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        instance = self.get_instance(pk)
+        if instance is not None:
+           serializer = self.get_serializer(instance)
+           return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+        else:
+            return Response({"status": "error", "message": "Reward does not exist", "response_code": status.HTTP_404_NOT_FOUND})
     
+    def delete(self, request, pk):
+        instance = self.get_instance(pk) 
+        if instance is not None:
+           instance.delete()
+           return Response({"status": "success", "message": "Deleted successfully", "response_code": status.HTTP_200_OK})
+        else:
+            return Response({"status": "error", "message": "Reward does not exist", "response_code": status.HTTP_404_NOT_FOUND})
+    
+    def patch(self, request, pk):
+        instance = self.get_instance(pk)
+        if instance is not None:
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"status": "success", 
+                                 "message": serializer.data, "response_code": status.HTTP_200_OK})
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"status": "error", "message": "Reward does not exist",
+                              "response_code": status.HTTP_404_NOT_FOUND})
+    
+
 
 from geopy.distance import distance 
 from django.shortcuts import get_object_or_404
@@ -480,26 +553,35 @@ class TurfDateBookingView(generics.ListAPIView):
 
 class CustomerLocationView(generics.RetrieveUpdateAPIView):
     serializer_class = CustomerLocationSerializer
+    queryset = Customer.objects.all()
 
-    def get_object(self):
+    def get_intance(self,pk):
         try:
-            customer = Customer.objects.get(pk = self.kwargs.get('id')  )
-            return customer.customer  
+            
+            return self.get_queryset().get(pk=pk)
         except Customer.DoesNotExist:
-            raise Http404("Customer does not exist")
+            return None
+
     # def get_object(self):
     #     return self.request.user 
 
-    def patch(self, request, id):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+    def patch(self, request, pk):
+        instance = self.get_intance(pk)
+        if instance is not None:
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+        
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"status": "success", "message": serializer.data, "response_code": status.HTTP_200_OK})
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"status": "error", "message": "User does not exist", "response_code": status.HTTP_404_NOT_FOUND})
     
+
+
+
 class NearByTurf(APIView):
     def get(self, request):
         try:
@@ -580,7 +662,7 @@ import requests
 
 class DisplayWeeklyIncomeData(APIView):
     def get(self, request, turf_id):
-        ai_backend_url = 'https://2300-103-147-208-161.ngrok-free.app/income'
+        ai_backend_url = 'https://ff95-116-68-110-250.ngrok-free.app/income'
 
         try:
             response = requests.get(ai_backend_url)
@@ -600,7 +682,7 @@ class DisplayWeeklyIncomeData(APIView):
 
 class DisplayWeeklyBookingData(APIView):
     def get(self, request, turf_id):
-        ai_backend_url = 'https://2300-103-147-208-161.ngrok-free.app/booking'
+        ai_backend_url = 'https://ff95-116-68-110-250.ngrok-free.app/booking'
 
         try:
             response = requests.get(ai_backend_url)
@@ -748,7 +830,7 @@ class User_Player_Search(APIView):
 
 class playersLeaderBoard(APIView):
     def get(self, request):
-        ai_backend_url = 'https://2300-103-147-208-161.ngrok-free.app/playerdata'
+        ai_backend_url = 'https://ff95-116-68-110-250.ngrok-free.app/playerdata'
 
         try:
 
@@ -777,6 +859,28 @@ class playersLeaderBoard(APIView):
             return Response({"status": "failure", "message": "Request failed: "})            
 
 
+
+
+class CustomerBookingCount(APIView):
+   
+    def get(self, request):
+        queryset = TurfBooking.objects.filter(
+            date__gte=timezone.now() - timedelta(days=90)
+        ).values('user').annotate(booking_count=Count('user'))
+
+        data = list(queryset) 
+
+        return Response({
+            "status": "success",
+            "message": data,
+            "response_code": status.HTTP_200_OK
+        })
+
+    
+    
+
+
+   
 
 # from geopy.geocoders import Nominatim
 

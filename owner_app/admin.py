@@ -1,11 +1,8 @@
 from django.contrib import admin
 from .models import *
 from import_export.admin import ImportExportModelAdmin
-<<<<<<< HEAD
 from import_export import resources
 
-=======
->>>>>>> 859f3cf31588934af9da68c323e4a91a727acf60
 # Register your models here.
 
 admin.site.register(Owner)
@@ -29,7 +26,6 @@ admin.site.register(UserBookingHistory)
 admin.site.register(RedeemRewardsModel)
 # admin.site.register(TurfPriceUpdateModel)
 admin.site.register(AiTurfBookModel)
-<<<<<<< HEAD
 
 class TurfBookingResource(resources.ModelResource):
     class Meta:
@@ -39,6 +35,3 @@ class TurfBookingAdmin(ImportExportModelAdmin):
     resource_class = TurfBookingResource
 
 admin.site.register(TurfBooking, TurfBookingAdmin)
-=======
-admin.site.register(TurfRating)
->>>>>>> 859f3cf31588934af9da68c323e4a91a727acf60

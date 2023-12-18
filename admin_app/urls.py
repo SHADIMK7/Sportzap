@@ -16,7 +16,7 @@ urlpatterns = [
         path('booking_cancel/<int:pk>/',TurfBookingCancel.as_view(), name='booking_cancel'),
         # path('admin_view/',AdminDataView.as_view(), name='admin_view'),
         path('transaction_list/',TransactionHistory.as_view(), name='transaction_list'),
-        path('leader_board/',LeaderBoard.as_view(),name='leader_board'),
+        path('leader_board/',TeamLeaderBoard.as_view(),name='leader_board'),
         # path('player_leader_board/',PlayerLeaderBoard.as_view(),name='player_leaderboard'),
         path('amenity_create_list/',AmenityView.as_view(),name='amenity_create_list'),
         path('amenity_delete/<int:pk>/',AmenityDelete.as_view(),name='amenity_delete'),
@@ -26,7 +26,7 @@ urlpatterns = [
         path('turf_booking_date/',TurfDateBookingView.as_view(),name='turf_list_date'),
         path('weekly_income/',TurfWeeklyIncomeView.as_view(),name='weekly_income'),
         path('monthly_turf_income/',TurfMonthlyIncomeView.as_view(),name='monthly_turf_income'),
-        path('customer_location/<int:id>/', CustomerLocationView.as_view(),name='customer_location'),
+        path('customer_location/<int:pk>/', CustomerLocationView.as_view(),name='customer_location'),
         path('user_location_fetch/',NearByTurf.as_view(),name='user_location_fetch'),
         path('match_rating_view/',MatchRatingView.as_view(),name='match_rating_view'),
         path('predicted_weekly_income/<int:turf_id>/', DisplayWeeklyIncomeData.as_view(), name='predictedweeklyincome'),
@@ -35,6 +35,7 @@ urlpatterns = [
         path('user_team_search/',User_Team_Search.as_view(),name='user_team_search'),
         path('user_player_search/',User_Player_Search.as_view(),name='user_player_search'),
         path('player_leaderboard/',playersLeaderBoard.as_view(),name='player_leaderboard'),
+        path('customer_booking_count/',CustomerBookingCount.as_view(), name='customer_booking_count'),
 
 
 

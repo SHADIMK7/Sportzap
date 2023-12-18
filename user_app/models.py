@@ -41,10 +41,7 @@ class Player(models.Model):
     invitation_pending = models.BooleanField(default=False) 
     player_longitude = models.FloatField(null=True)
     player_latitude = models.FloatField(null=True)
-<<<<<<< HEAD
-=======
     
->>>>>>> 859f3cf31588934af9da68c323e4a91a727acf60
     
     def __str__(self):
         return self.player_name

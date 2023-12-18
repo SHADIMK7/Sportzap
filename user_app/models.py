@@ -27,6 +27,7 @@ class Team(models.Model):
     team_strength = models.IntegerField()
     team_longitude = models.FloatField(null=True)
     team_latitude = models.FloatField(null=True)
+    team_user = models.ForeignKey('owner_app.Customer', on_delete=models.CASCADE)
     
     def __str__(self):
         return self.team_name

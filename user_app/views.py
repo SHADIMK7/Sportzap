@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from geopy.distance import distance
 from rest_framework .authtoken.models import Token
 from . help import *
+from . stripe_helper import *
 import requests
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
@@ -218,18 +219,31 @@ class BookingView(generics.ListCreateAPIView):
         return TurfBooking.objects.filter(turf=pk)
 
     def perform_create(self, request, serializer):
-        user = 1  
+        user = 1 
         # user = self.request.user
         turf = self.kwargs['pk']
-        print(turf)
+        print('ENTERED IN TURF PAYMENT',turf)
 
         try:
             selected_turf = Turf.objects.get(pk=turf)
-            print(selected_turf)
+            print('TURF SELECTED ',selected_turf)
         except Turf.DoesNotExist:
             raise Http404("Turf does not exist")
 
         stripe.api_key = 'sk_test_51ONT9dSB1nMhPCpjlALhOnjHuPgxdfYIRbk54BGhlmpmT1AuipFXvQnitrUMQDh8KG1nyAEBiDu0LEwGgL9K2iDE00Nkf1Joqf'
+        
+        data = {
+            "number" : "4242424242424242",
+            "exp_month" : "04",
+            "exp_year" : "2024",
+            "cvc" : "124"
+        }
+        print('YOU RE HERE', data)
+        client = Stripe()
+        print('CLIENT',client)
+        token = client.create_token(data)  
+        print(token)      
+        
         
         try:
             charge = stripe.Charge.create(
@@ -417,6 +431,9 @@ class TeamView(generics.ListCreateAPIView):
     serializer_class = TeamSerializer
     
     def post(self, request):
+        user = self.request.user
+        # user = 1
+        print(user)
         serializer = TeamSerializer(data = request.data)
         if serializer.is_valid():
             team = serializer.save()
@@ -440,9 +457,10 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
     # lookup_field = "id"
     
     def get(self, request, pk):
-        self.queryset = self.queryset.filter(id = pk).first()
+        # self.queryset = self.queryset.filter(id = pk).first()
+        self.queryset = self.get_object()
+        print(self.queryset)
         team_id = self.queryset.id
-        print(team_id)
         if self.queryset:
             serializer = self.get_serializer(self.queryset)
             return Response({'status': "success",
@@ -647,10 +665,12 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
     
     def get(self, request, pk):
         self.queryset = self.queryset.filter(id = pk).first()
+        player_id = self.queryset.id
         if self.queryset:
             serializer = self.get_serializer(self.queryset)
             return Response({'status': "success",
                             'message': "fetched successfully",
+                            'player_id': player_id,
                             'response_code': status.HTTP_204_NO_CONTENT,
                             'data': serializer.data})
         else:
@@ -722,12 +742,15 @@ class ProfileUpdateView(APIView):
     
     def get(self, request, *args, **kwargs):
         user = request.user
+        print(user)
+        user_id = user.id
+        print('ID',user_id)
 
-        # Retrieve Abstract and Profile instances
         abstract_instance = Abstract.objects.get(pk=user.pk)
-        profile_instance = Profile.objects.get(user=user)
+        print('HERE',abstract_instance)
+        profile_instance = Profile.objects.filter(id=user_id).first()
+        print(profile_instance)
 
-        # Serialize Abstract and Profile instances
         abstract_serializer = AbstractSerializer(abstract_instance)
         profile_serializer = ProfileSerializer(profile_instance)
         return Response({'status': "success",
@@ -887,6 +910,11 @@ class MatchInvitationView(generics.CreateAPIView):
             team2 = Team.objects.filter(pk = team2_id).first()
             team1_players = team1.players.all()
             team2_players = team2.players.all()
+            
+            team1_user = team1.team_user.id
+            print('User_1 :',team1_user)
+            team2_user = team2.team_user.id
+            print('User_2 :',team2_user)
                 
             common_player = set(team1_players.values_list('id', flat=True)).intersection(team2_players.values_list('id', flat=True))
             print(common_player)
@@ -896,6 +924,12 @@ class MatchInvitationView(generics.CreateAPIView):
         except(Team.DoesNotExist):
             return Response({'status': "error",
                             'message': "Invalid team",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+            
+        if team1_user == team2_user:
+            return Response({'status': "error",
+                            'message': "Selected users are same",
                             'response_code': status.HTTP_400_BAD_REQUEST,
                             'data': ''})
         

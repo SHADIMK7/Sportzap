@@ -212,15 +212,16 @@ class TurfAvailabilityShow(generics.RetrieveAPIView):
 
 class BookingView(generics.ListCreateAPIView):
     serializer_class = TurfBookingSerializer
-    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsUserOnly]
 
     def get_queryset(self):
         pk = self.kwargs['pk']
         return TurfBooking.objects.filter(turf=pk)
 
     def perform_create(self, request, serializer):
-        user = 1 
-        # user = self.request.user
+        # user = 1 
+        user = self.request.user
         turf = self.kwargs['pk']
         print('ENTERED IN TURF PAYMENT',turf)
 

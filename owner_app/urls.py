@@ -12,7 +12,9 @@ urlpatterns = [
     path('turf-display-all/', TurfDisplayAll.as_view(), name='turf-display-all'),
     path('amenity/', AmenityView.as_view(), name='amenity'),
     path('owner_delete/', OwnerDelete.as_view(), name="owner_delete"),
-    path('change-password/', ChangePasswordOwner.as_view(), name="change-password")
+    path('change-password/', ChangePasswordOwner.as_view(), name="change-password"),
+    # path('forgot-pass/', ResetPass.as_view(), name="forgot-pass")
+
 
 
 ]

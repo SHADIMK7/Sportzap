@@ -12,10 +12,20 @@ from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOwnerOnly
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from email.mime.image import MIMEImage
+from django.views import View
+from django.shortcuts import render, redirect
+from user_app.help import generate_random_password
+from django.conf import settings
+
 
 
 
 # Create your views here.
+
 
 
 
@@ -58,6 +68,51 @@ class CustomLoginView(ObtainAuthToken):
             return Response(response_data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+
+class ResetPass(APIView):
+    serializer_class = ResetPasswordSerializer  # Define your serializer class
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data.get('email')
+        user = Abstract.objects.filter(email=email).first()
+
+        if user:
+            new_pass = generate_random_password()
+            user.set_password(new_pass)
+            user.save()
+
+            message = render_to_string('reset_pass.html', {'new_pass': new_pass, 'email': email})
+            plain_message = strip_tags(message)
+
+            subject = 'Sportzap Reset password'
+            from_email = settings.EMAIL_HOST_USER
+            to_email = email
+
+            email = EmailMultiAlternatives(subject, plain_message, from_email, [to_email])
+
+            with open("media/image/placeholder.png", "rb") as f:
+                logo_data = f.read()
+                email_image = MIMEImage(logo_data)
+                email_image.add_header('Content-ID', '<logo>')
+                email.attach(email_image)
+
+            email.send()
+
+            return Response({
+                'status': "success",
+                'response_code': status.HTTP_201_CREATED,
+                'message': "Password reset successful. New password has been sent to your email",
+            })
+        else:
+            return Response({
+                "status": "failed",
+                "response code": status.HTTP_400_BAD_REQUEST,
+                "message": "No such email registered"
+            })
 
 
 class Registration(generics.CreateAPIView):

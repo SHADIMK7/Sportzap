@@ -52,7 +52,7 @@ class Turf(models.Model):
     price = models.FloatField(default=0)
     image = models.ImageField(upload_to='image/') 
     description = models.CharField(max_length=255)
-    amenity = models.ManyToManyField('Amenity')
+    amenity = models.ManyToManyField('Amenity', null=True)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
     ai_rating = models.FloatField(null=True)
@@ -170,8 +170,8 @@ class Profile(models.Model):
     profile_name = models.CharField(max_length=55, null=True)
     profile_pic = models.ImageField(upload_to='profile_image/', null=True)
     
-    def __str__(self):
-        return self.profile_name
+    # def __str__(self):
+    #     return self.user
 
 class UserBookingHistory(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)

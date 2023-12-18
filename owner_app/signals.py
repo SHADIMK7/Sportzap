@@ -30,6 +30,14 @@ def create_balance(sender, instance , **kwargs):
     else:
         instance.balance = instance.price
         instance.amount_paid = instance.price
+        
+# @receiver(pre_save, sender = TurfBooking)
+# def create_username(self, request, sender, instance, **kwargs):
+#     print("user started")
+#     TurfBooking.objects.create(
+#         user_name = request.user.username,
+#         user_mobile = request.user.phone_no
+#     )
 
   
 @receiver(post_save, sender=TurfBooking)

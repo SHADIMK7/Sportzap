@@ -18,14 +18,15 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from owner_app.views import CustomLoginView
+from owner_app.views import CustomLoginView, ResetPass
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', CustomLoginView.as_view(), name='custom-login'),
-    path('owner/', include('owner_app.urls')),
+    path('owner/', include('owner_app.urls')), 
     path('user/',include('user_app.urls')),
     path('admin_app/',include('admin_app.urls')),
+    path('forgot-pass/', ResetPass.as_view(), name="forgot-pass")
 
 ]
 

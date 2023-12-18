@@ -1,10 +1,16 @@
 from django.contrib import admin
 from .models import *
+from import_export.admin import ImportExportModelAdmin
 # Register your models here.
 
 admin.site.register(Owner)
-admin.site.register(Abstract)   
-admin.site.register(Turf)
+admin.site.register(Abstract)  
+
+class TurfAdmin(ImportExportModelAdmin, admin.ModelAdmin):
+    list_per_page = 100
+    list_display =['owner', 'name', 'location', 'price', 'image', 'description','latitude', 'longitude']
+    # search_fields = ('price')
+admin.site.register(Turf, TurfAdmin)
 admin.site.register(Amenity)
 admin.site.register(TurfBooking)
 admin.site.register(PaymentHistoryModel)

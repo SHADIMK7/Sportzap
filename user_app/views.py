@@ -14,7 +14,9 @@ from . help import *
 from . stripe_helper import *
 import requests
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 from datetime import datetime, timedelta
+from owner_app.permissions import IsUserOnly
 
 
 
@@ -68,6 +70,37 @@ class CustomerRegistrationView(generics.CreateAPIView):
                             'data': data})    
     
     
+class TurfAvailabilityShow(generics.RetrieveAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsUserOnly]
+    serializer_class = UserBookingHistorySerializer
+
+    def get_object(self):
+        pk = self.kwargs['pk']
+        turf_booking_history = UserBookingHistory.objects.filter(turf_booked__turf=pk).first()
+        return turf_booking_history
+ 
+    def get(self, request, *args, **kwargs):
+        turf_booking_history = self.get_object()
+
+        user_id = self.request.user.id
+        print('user id is ', user_id)
+
+        three_months_ago = datetime.now() - timedelta(days=90)
+
+        booking_count = TurfBooking.objects.filter(user__customer=user_id, date__gte=three_months_ago).count()
+        print("booking count ", booking_count)
+        if turf_booking_history is None:
+            return Response({"detail": "Turf booking history not found.","user booking count": booking_count}, status=404)
+
+
+        serialized_data = self.get_serializer(turf_booking_history).data
+
+        return Response({
+            "turf booking history": serialized_data,
+            "user booking count": booking_count
+        })
+
     
         
 # class BookingView(generics.ListCreateAPIView):
@@ -591,7 +624,6 @@ class PlayerView(generics.ListCreateAPIView):
                 }
                 raise serializers.ValidationError(response_data)
         else:
-            serializer.save()
             response_data = {
                 'status': "success",
                 'message': 'Saved but no team selected',
@@ -771,59 +803,19 @@ class ChangePasswordView(APIView):
 # class SendInvitationView(generics.CreateAPIView):
 #     serializer_class = InvitationSerializer
 
-#     def create(self, request, *args, **kwargs):
-#         serializer = self.get_serializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-
-#         team_id = serializer.validated_data['team_id']
-#         player_id = serializer.validated_data['player_id']
-
-#         try:
-#             team = Team.objects.get(id=team_id)
-#             player = Player.objects.get(id=player_id)
-#         except (Team.DoesNotExist, Player.DoesNotExist):
-#             return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
-
-#         if team.players.count() < team.team_strength:
-#             # Assuming you have a field in your Player model to track invitations
-#             player.invitation_pending = True
-#             player.save()
-
-#             # You might want to send a notification to the player here
-
-#             return Response({'detail': 'Invitation sent successfully'}, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'detail': 'Team is already full'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-# class AcceptInvitationView(generics.RetrieveUpdateAPIView):
-#     serializer_class = PlayerSerializer
+class UserDelete(generics.DestroyAPIView):
     
-#     def get_object(self):
-#         player_id = self.kwargs.get('pk')
-#         try:
-#             return Player.objects.get(id=player_id)
-#         except Player.DoesNotExist:
-#             return Response({'detail': 'Team or Player not found'}, status=status.HTTP_404_NOT_FOUND)
+    def delete(self, request, *args, **kwargs):
+        user = self.request.user
 
-#     def update(self, request, *args, **kwargs):
-#         instance = self.get_object()
-#         print(instance)
-#         team = request.data.get('team')
-#         print(team)
-#         print(request.data)
+        customer = user
+        if customer:
+            customer.delete()
+            return Response({'status': 'success'})
+        else:
+            return Response({'status': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
 
-#         if instance.invitation_pending:
-#             instance.team = Team.objects.get(id=team)
-#             instance.invitation_pending = False
-#             instance.save()
-
-#             # You might want to send a notification to the team that the player has accepted the invitation
-
-#             return Response({'detail': 'Invitation accepted successfully'}, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'detail': 'No pending invitation for this player'}, status=status.HTTP_400_BAD_REQUEST)
-
+            
 class TeamInvitationView(generics.CreateAPIView):
     serializer_class = TeamInvitationSerializer
 
@@ -1083,15 +1075,18 @@ class CreateTurfRating(generics.ListCreateAPIView):
 #             return Response({'status': 'user_not_provided'})    
                
 class RewardPoints(generics.ListAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsUserOnly]
     serializer_class = RewardPointSerializer
     
     def get_queryset(self):
         pk = self.kwargs['pk']
-        return RewardPointModel.objects.filter(booking_user_pk=pk)
+        return RewardPointModel.objects.filter(user=pk)
     
     def list(self,request , *args, **kwargs):
         user = self.kwargs['pk']
-        reward_points = RewardPointModel.objects.filter(booking_user_pk=user).aggregate(total_points=models.Sum('reward_points'))
+        print("permission",self.permission_classes)
+        reward_points = RewardPointModel.objects.filter(user=user).aggregate(total_points=models.Sum('reward_points'))
         
         if not reward_points['total_points']:
             total_points = 0
@@ -1112,6 +1107,8 @@ class RewardPoints(generics.ListAPIView):
     
     
 class UserBookingHistoryView(generics.ListAPIView):
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsUserOnly]
     serializer_class = UserBookingHistorySerializer
 
     def get_queryset(self):
@@ -1119,8 +1116,15 @@ class UserBookingHistoryView(generics.ListAPIView):
         return UserBookingHistory.objects.filter(user=pk)
     
     
-class RedeemRewards(generics.CreateAPIView):
+class RedeemRewards(generics.ListCreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsUserOnly]
     serializer_class = RedeemRewardsSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return RedeemRewardsModel.objects.filter(user=pk)
+    
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -1128,8 +1132,11 @@ class RedeemRewards(generics.CreateAPIView):
         
         user = serializer.validated_data['user']
         reward = serializer.validated_data.get('reward') 
+        print("reward", reward)
 
         if not reward or user.reward_points < reward.reward_points:
+            print("reward points is ", user.reward_points)
+            # print("points for reward is ",reward.reward_points)
             return Response({'status': "failed",'message': 'Not enough reward points or invalid reward','response_code':status.HTTP_400_BAD_REQUEST})
 
         instance = serializer.save(redeemed_date=timezone.now())
@@ -1143,4 +1150,8 @@ class RedeemRewards(generics.CreateAPIView):
                         'remaining_points': user.reward_points,
                         }
 
-        return Response({'status':"success",'message': "Reward redeemed successfully","data":response_data,'response_code': status.HTTP_201_CREATED,})
+        return Response({'status':"success",'message': "Reward redeemed successfully",'response_code': status.HTTP_201_CREATED,"data":response_data,})
+    
+    
+
+

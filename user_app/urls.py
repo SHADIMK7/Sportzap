@@ -11,8 +11,6 @@ urlpatterns = [
     path('team_list/', TeamView.as_view(), name='team_list'),
     path('team_list/<int:pk>/', TeamDetailView.as_view(), name='team_detail'),
     path('player/', PlayerView.as_view(), name='player'),
-    # path('player_details/<str:name>/', PlayerDetail.as_view(), name='player_detail'),
-    # path('rewards/<int:pk>/', RewardPoints.as_view(), name='rewards'),
     path('player/<int:pk>/', PlayerDetail.as_view(), name='player_detail'),
     path('gallery/', GalleryView.as_view(), name='gallery'),
     path('profile/', ProfileUpdateView.as_view(), name='profile'),
@@ -23,8 +21,10 @@ urlpatterns = [
     path('booking-history/<int:pk>/', UserBookingHistoryView.as_view(), name="booking-history"),
     path('redeem-rewards/<int:pk>/', RedeemRewards.as_view(), name='redeem-rewards'),
     path('turf_rating/', CreateTurfRating.as_view(), name='turf_rating'),
+    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('reward-points/<int:pk>/', RewardPoints.as_view(), name='reward-points'),
+    # path('rewards/<int:pk>/', RewardPoints.as_view(), name='rewards'),
     # path('sync/', BookingSyncView.as_view(), name='booking_sync'),
     # path('api/turf-booking-ai/', TurfBookingAIView.as_view(), name='turf-booking-ai'),
-    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     
 ]

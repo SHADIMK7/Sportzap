@@ -177,7 +177,9 @@ class RedeemRewardsSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = RedeemRewardsModel
-        fields = ['user', 'required_points', 'reward']
+        fields = ['user', 'required_points', 'reward', 'redeemed_date']
+        
+
     
     def get_required_points(self, object):
         if isinstance(object, RedeemRewardsModel):

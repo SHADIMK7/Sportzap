@@ -26,7 +26,6 @@ admin.site.register(UserBookingHistory)
 admin.site.register(RedeemRewardsModel)
 # admin.site.register(TurfPriceUpdateModel)
 admin.site.register(AiTurfBookModel)
-<<<<<<< HEAD
 
 class TurfBookingResource(resources.ModelResource):
     class Meta:
@@ -36,7 +35,5 @@ class TurfBookingAdmin(ImportExportModelAdmin):
     resource_class = TurfBookingResource
 
 admin.site.register(TurfBooking, TurfBookingAdmin)
-=======
 admin.site.register(TurfRating)
 
->>>>>>> 182e4820033d7cd15eb103952bd4da87b673ba5d

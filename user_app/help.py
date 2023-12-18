@@ -1,6 +1,8 @@
 from owner_app .models import *
 from rest_framework.response import Response
 from rest_framework import status
+import string
+import secrets
 
 
 def check_mobile(mobile):
@@ -18,4 +20,11 @@ def check_email(email):
                              'response_code':status.HTTP_400_BAD_REQUEST})
     else:
         return None
+
+def generate_random_password(length=12):
+    characters = string.ascii_letters + string.digits
+
+    password = ''.join(secrets.choice(characters) for o in range(length))
+
+    return password
             

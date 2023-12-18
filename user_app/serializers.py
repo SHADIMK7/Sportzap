@@ -57,7 +57,9 @@ class TurfBookingAISerializer(serializers.ModelSerializer):
     
     
 class TurfBookingSerializer(serializers.ModelSerializer):
-    balance = serializers.SerializerMethodField()
+    balance = serializers.SerializerMethodField('get_balance')
+    user_name = serializers.SerializerMethodField('get_user_name')
+    user_mobile = serializers.SerializerMethodField('get_user_mobile')
 
     class Meta:
         model = TurfBooking  
@@ -65,6 +67,12 @@ class TurfBookingSerializer(serializers.ModelSerializer):
 
     def get_balance(self, object):
         return object.price - object.amount_paid
+    
+    def get_user_name(self, object):
+        return object.user.customer.username
+    
+    def get_user_mobile(self, object):
+        return object.user.customer.phone_no
     
     
 class TurfDisplaySerializer(serializers.ModelSerializer):

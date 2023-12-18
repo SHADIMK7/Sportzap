@@ -183,3 +183,14 @@ class AmenitySerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
+    
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        """
+        Validate that the email exists in the database.
+        """
+        if not Abstract.objects.filter(email=value).exists():
+            raise serializers.ValidationError("No user found with this email address.")
+        return value

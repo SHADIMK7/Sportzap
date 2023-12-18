@@ -26,7 +26,7 @@ class CustomerRegistrationView(generics.CreateAPIView):
 
     def post(self, request):
         mobile = request.data.get('abstract', {}).get('phone_no')
-        print(mobile)
+        # print(mobile)
         print(request.data)
         # if Abstract.objects.filter(phone_no = mobile).first():
         #     return Response({'status': "failed",

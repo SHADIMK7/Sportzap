@@ -16,7 +16,13 @@ import requests
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from datetime import datetime, timedelta
-from owner_app.permissions import *
+from owner_app.permissions import IsUserOnly
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from email.mime.image import MIMEImage
+from django.conf import settings
+
 
 
 
@@ -26,8 +32,6 @@ class CustomerRegistrationView(generics.CreateAPIView):
 
     def post(self, request):
         mobile = request.data.get('abstract', {}).get('phone_no')
-        # print(mobile)
-        print(request.data)
         # if Abstract.objects.filter(phone_no = mobile).first():
         #     return Response({'status': "failed",
         #                      'message': "Mobile number already exists",
@@ -37,7 +41,6 @@ class CustomerRegistrationView(generics.CreateAPIView):
             return response
             
         email = request.data.get('abstract', {}).get('email')
-        print(email)
         # if Abstract.objects.filter(email = email).first():
         #     return Response({'status': "failed",
         #                      'message': "Email already exists",
@@ -47,6 +50,8 @@ class CustomerRegistrationView(generics.CreateAPIView):
             return response
         
         serializer = self.serializer_class(data=request.data)
+        password = request.data.get('abstract.password')
+        email = request.data.get('abstract.email')
         if serializer.is_valid():
             account = serializer.save()
             token, create = Token.objects.get_or_create(user=account.customer)
@@ -56,8 +61,26 @@ class CustomerRegistrationView(generics.CreateAPIView):
                 "username": account.customer.username,
                 "email": account.customer.email,
                 "Phone number": account.customer.phone_no,
+                "password" : account.customer.password,
                 "token": token_key
             }
+            message = render_to_string('registration.html', {'user_password': password, 'user_email': email})
+            plain_message = strip_tags(message)
+
+            subject = 'Sportzap Registration'
+            from_email = settings.EMAIL_HOST_USER
+            to_email = email
+
+            email = EmailMultiAlternatives(subject, plain_message, from_email, [to_email])
+            email.attach_alternative(message, "text/html")
+            
+            with open("media/image/placeholder.png", "rb") as f:
+                logo_data = f.read()
+                email_image = MIMEImage(logo_data)
+                email_image.add_header('Content-ID', '<logo>')
+                email.attach(email_image)
+
+            email.send()
             return Response({'status': "success",
                             'message': "Registration successful",
                             'response_code': status.HTTP_200_OK,
@@ -84,12 +107,9 @@ class TurfAvailabilityShow(generics.RetrieveAPIView):
         turf_booking_history = self.get_object()
 
         user_id = self.request.user.id
-        print('user id is ', user_id)
-
         three_months_ago = datetime.now() - timedelta(days=90)
 
         booking_count = TurfBooking.objects.filter(user__customer=user_id, date__gte=three_months_ago).count()
-        print("booking count ", booking_count)
         if turf_booking_history is None:
             return Response({"detail": "Turf booking history not found.","user booking count": booking_count}, status=404)
 
@@ -223,11 +243,9 @@ class BookingView(generics.ListCreateAPIView):
         # user = 1 
         user = self.request.user
         turf = self.kwargs['pk']
-        print('ENTERED IN TURF PAYMENT',turf)
 
         try:
             selected_turf = Turf.objects.get(pk=turf)
-            print('TURF SELECTED ',selected_turf)
         except Turf.DoesNotExist:
             raise Http404("Turf does not exist")
 
@@ -239,12 +257,8 @@ class BookingView(generics.ListCreateAPIView):
             "exp_year" : "2024",
             "cvc" : "124"
         }
-        print('YOU RE HERE', data)
         client = Stripe()
-        print('CLIENT',client)
-        token = client.create_token(data)  
-        print(token)      
-        
+        token = client.create_token(data)          
         
         try:
             charge = stripe.Charge.create(
@@ -271,19 +285,24 @@ class BookingView(generics.ListCreateAPIView):
 
     def post(self, request, *args, **kwargs):
         turf = self.kwargs['pk']
-        print(turf)
-        print('ENTERED')
         try:
             selected_turf = Turf.objects.get(pk=turf)
         except Turf.DoesNotExist:
             raise Http404("Turf does not exist")
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)        
+        user = request.data['user']
+        date = request.data['date']
+        start_time = request.data['start_time']
+        end_time = request.data['end_time']
+        price = request.data['price']
+        
+        Booking_user = Abstract.objects.filter(id=user).first()
+        email = Booking_user.email
         serializer.is_valid(raise_exception=True)
 
         Payment_type = serializer.validated_data.get('Payment_type', 'Full_payment')
 
         if Payment_type == 'Full_payment':
-            print('ENTERED IN PAYMENT')
             serializer.validated_data['turf'] = selected_turf
             
             payment_successful = self.perform_create(request, serializer)
@@ -302,9 +321,31 @@ class BookingView(generics.ListCreateAPIView):
                 'response_code': status.HTTP_400_BAD_REQUEST,
             })
         elif Payment_type == 'Offline_payment':
-            print('ENTERED IN OFFLINE PAYMENT')
             serializer.validated_data['turf'] = selected_turf
             serializer.save()
+            
+            message = render_to_string('booking.html', {'user': Booking_user,
+                                                                 'date': date,
+                                                                 'start': start_time,
+                                                                 'end': end_time,
+                                                                 'price': price,
+                                                                 'turf_name': selected_turf})
+            plain_message = strip_tags(message)
+
+            subject = 'Sportzap Regarding your booking'
+            from_email = settings.EMAIL_HOST_USER
+            to_email = email
+            
+            email = EmailMultiAlternatives(subject, plain_message, from_email, [to_email])
+            email.attach_alternative(message, "text/html")
+            
+            with open("media/image/placeholder.png", "rb") as f:
+                logo_data = f.read()
+                email_image = MIMEImage(logo_data)
+                email_image.add_header('Content-ID', '<logo>')
+                email.attach(email_image)
+
+            email.send()
             
             return Response({
                 'status': "success",
@@ -428,17 +469,18 @@ class BookingView(generics.ListCreateAPIView):
     
     
 class TeamView(generics.ListCreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsUserOnly]
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
     
     def post(self, request):
         user = self.request.user
         # user = 1
-        print(user)
         serializer = TeamSerializer(data = request.data)
         if serializer.is_valid():
-            team = serializer.save()
-            print(team)
+            user_instance = Customer.objects.get(customer_id=user.id)
+            team = serializer.save(team_user = user_instance)
             return Response({'status': "success",
                             'message': "Team adding Successful",
                             'team': team.id,
@@ -451,8 +493,15 @@ class TeamView(generics.ListCreateAPIView):
                             'response_code': status.HTTP_404_NOT_FOUND, 
                             'data': data})
         
+        
+class IsTeamCreator(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.team_user.customer_id == request.user.id
+    
     
 class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsTeamCreator]
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
     # lookup_field = "id"
@@ -460,7 +509,6 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get(self, request, pk):
         # self.queryset = self.queryset.filter(id = pk).first()
         self.queryset = self.get_object()
-        print(self.queryset)
         team_id = self.queryset.id
         if self.queryset:
             serializer = self.get_serializer(self.queryset)
@@ -477,11 +525,12 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
                             'data': data})
         
     def put(self, request, pk):
+        self.check_object_permissions(request, self.get_object())
+        
         self.queryset = self.queryset.filter(id = pk).first()
         if self.queryset:
             serializer = self.get_serializer(self.queryset, data=request.data)
             if serializer.is_valid():
-                print('HI ENTERED')
                 serializer.save()
                 return Response({'status': "success",
                                 'message': "updated successfully",
@@ -501,6 +550,8 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
                             'data': data})
         
     def delete(self, request, pk):
+        self.check_object_permissions(request, self.get_object())
+        
         self.queryset = self.queryset.filter(id = pk).first()
         self.perform_destroy(self.queryset)
         return Response({'status': "success",
@@ -577,15 +628,15 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class PlayerView(generics.ListCreateAPIView):
+    # permission_classes = [IsTeamCreator]
+    # authentication_classes = [TokenAuthentication]
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
     
     def perform_create(self, serializer):
         player_pic = self.request.data.get('player_pic')
-        print('PLAYER PIC :', player_pic)
 
         processed_image = process_profile_pic_with_ai(player_pic)
-        print('ENTERED IN :',processed_image)
 
         if processed_image:
             processed_image_content = processed_image
@@ -625,6 +676,7 @@ class PlayerView(generics.ListCreateAPIView):
                 }
                 raise serializers.ValidationError(response_data)
         else:
+            serializer.save()
             response_data = {
                 'status': "success",
                 'message': 'Saved but no team selected',
@@ -638,28 +690,28 @@ def process_profile_pic_with_ai(player_pic):
         ai_service_endpoint = 'https://5cdd-116-68-110-250.ngrok-free.app/formation_img'
         
         files = {'image': ('player_pic.png', player_pic.read())}
-        print('FILES :',files)
         
         response = requests.post(ai_service_endpoint, files=files)
-        print('RESPONSE :',response)
-        print('HI')
 
         if response.status_code == 200:
             processed_image_bytes = response.content
-            print(processed_image_bytes)
 
             processed_image_content = ContentFile(processed_image_bytes, name='processed_image.jpg')
-            print('IN PROCESSED IMAGE', processed_image_content)
 
             return processed_image_content
         else:
-            print(f"Error: {response.status_code}")
             return None
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
         return None
     
+    
+# class IsPlayerCreator(permissions.BasePermission):
+#     def has_object_permission(self, request, view, obj):
+#         return obj.created_by == request.user
+    
 class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
+    # permission_classes = [IsPlayerCreator]
+    authentication_classes = [TokenAuthentication]
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
     # lookup_field = "name"
@@ -710,7 +762,7 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
 class GalleryView(generics.ListCreateAPIView):
     queryset = Gallery.objects.all()
     serializer_class = GallerySerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = []
     
     def get(self, request):
         gallery = Gallery.objects.all()
@@ -722,20 +774,28 @@ class GalleryView(generics.ListCreateAPIView):
     
     def post(self,request):
         serializer = GallerySerializer(data=request.data)
+        user = request.user
+        if not request.user.is_authenticated:
+            return Response({'status': "error",
+                            'message': "Authentication required to upload images",
+                            'response_code': status.HTTP_403_FORBIDDEN,
+                            'data': ''})
+
         if serializer.is_valid():
             # serializer.validated_data['user'] = request.user
-            serializer.save()
-            print(request.user)
+            user_instance = Customer.objects.filter(customer_id=user.id).first()
+            serializer.save(user=user_instance)
             return Response({'status': "success",
-                             'message': "Image uploaded successfully",
-                             'response_code': status.HTTP_200_OK,
-                             'data': ''})
-        else: 
+                            'message': "Image uploaded successfully",
+                            'response_code': status.HTTP_200_OK,
+                            'data': ''}) 
+        else:
             data = serializer.errors
             return Response({'status': "error",
                             'message': "Image uploading unsuccessful",
-                            'response_code': status.HTTP_200_OK,
+                            'response_code': status.HTTP_403_FORBIDDEN,
                             'data': data})
+            
             
         
 class ProfileUpdateView(APIView):
@@ -744,16 +804,12 @@ class ProfileUpdateView(APIView):
     
     def get(self, request, *args, **kwargs):
         user = request.user
-        print(user)
         user_id = user.id
-        print('ID',user_id)
 
         abstract_instance = Abstract.objects.get(pk=user.pk)
-        print('HERE',abstract_instance)
         profile_instance = Profile.objects.filter(id=user_id).first()
-        print(profile_instance)
 
-        abstract_serializer = AbstractSerializer(abstract_instance)
+        abstract_serializer = UserProfileSerializer(abstract_instance)
         profile_serializer = ProfileSerializer(profile_instance)
         return Response({'status': "success",
                         'message': "PRofile fetching Successful",
@@ -764,7 +820,6 @@ class ProfileUpdateView(APIView):
     def put(self, request, *args, **kwargs):
         user = request.user
 
-        # Get or create Abstract instance
         abstract_instance, created = Abstract.objects.get_or_create(pk=user.pk, defaults={'user': user})
 
         serializer = ProfileCombinedSerializer(data=request.data)
@@ -840,8 +895,6 @@ class TeamInvitationView(generics.CreateAPIView):
                             'data': ''})
 
         if team.players.count() >= team.team_strength:
-            team_under = team.players.count()
-            print(team_under)
             return Response({'status': "error",
                             'message': "Team is full",
                             'response_code': status.HTTP_400_BAD_REQUEST,
@@ -871,20 +924,14 @@ class AcceptInvitationView(generics.UpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        print(instance)
-
+        
         if instance.is_accepted:
             return Response({'status': "error",
                             'message': "Invitation has already been accepted",
                             'response_code': status.HTTP_400_BAD_REQUEST,
                             'data': ''})
         instance.team.players.add(instance.player)
-        player_instance = instance.player
-        team_instance = instance.team
-        print(team_instance)
-        print(player_instance)
         instance.is_accepted = True
-        print('HI')
         instance.save()
 
         return Response({'status': "success",
@@ -902,10 +949,7 @@ class MatchInvitationView(generics.CreateAPIView):
         # data['sender_team']
         
         team1_id = request.data.get('sender_team')
-        print(request.data)
         team2_id = request.data.get('receiver_team')
-        print(team1_id)
-        print(team2_id)
         
         try:
             team1 = Team.objects.filter(pk = team1_id).first()
@@ -914,15 +958,10 @@ class MatchInvitationView(generics.CreateAPIView):
             team2_players = team2.players.all()
             
             team1_user = team1.team_user.id
-            print('User_1 :',team1_user)
             team2_user = team2.team_user.id
-            print('User_2 :',team2_user)
                 
             common_player = set(team1_players.values_list('id', flat=True)).intersection(team2_players.values_list('id', flat=True))
-            print(common_player)
 
-            print(team1_players)
-            print(team2_players)
         except(Team.DoesNotExist):
             return Response({'status': "error",
                             'message': "Invalid team",
@@ -948,8 +987,6 @@ class MatchInvitationView(generics.CreateAPIView):
                             'data': ''})
         
         if team1.team_strength == team2.team_strength:
-            print(team1.team_strength)
-            print(team2.team_strength)
             
             team_invitation = MatchInvitation.objects.create(sender_team = team1, receiver_team = team2)
             return Response({'status': "success",
@@ -970,7 +1007,6 @@ class MatchAcceptInvitationView(generics.UpdateAPIView):
     
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        print(instance)
         if instance.is_accepted:
             return Response({'status': "error",
                             'message': "Invitation has already been accepted",
@@ -1012,16 +1048,12 @@ class CreateTurfRating(generics.ListCreateAPIView):
                 # Get the AI response from the external URL
                 ai_url = "https://b2cf-116-68-110-250.ngrok-free.app/sentiment"
                 ai_response = requests.get(ai_url).json()
-                print(ai_response)
                 
                 turf_rating_data = [item for item in ai_response if item.get('turfid') == int(turf_id)]
-                print(turf_rating_data)
 
 
                 if turf_rating_data and 'weighted_rating' in turf_rating_data[0]:
-                    print('HI YOU ARE IN')
                     weighted_rating = turf_rating_data[0]['weighted_rating']
-                    print("weighted rating is ", weighted_rating)
                     turf.ai_rating = weighted_rating
                     turf.save()
 
@@ -1078,7 +1110,7 @@ class CreateTurfRating(generics.ListCreateAPIView):
                
 class RewardPoints(generics.ListAPIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUserOnlyReward]
+    # permission_classes = [IsUserOnlyReward]
     serializer_class = RewardPointSerializer
     
     def get_queryset(self):
@@ -1087,7 +1119,6 @@ class RewardPoints(generics.ListAPIView):
     
     def list(self,request , *args, **kwargs):
         user = self.kwargs['pk']
-        print("permission",self.permission_classes)
         reward_points = RewardPointModel.objects.filter(user=user).aggregate(total_points=models.Sum('reward_points'))
         
         if not reward_points['total_points']:
@@ -1134,11 +1165,8 @@ class RedeemRewards(generics.ListCreateAPIView):
         
         user = serializer.validated_data['user']
         reward = serializer.validated_data.get('reward') 
-        print("reward", reward)
 
         if not reward or user.reward_points < reward.reward_points:
-            print("reward points is ", user.reward_points)
-            # print("points for reward is ",reward.reward_points)
             return Response({'status': "failed",'message': 'Not enough reward points or invalid reward','response_code':status.HTTP_400_BAD_REQUEST})
 
         instance = serializer.save(redeemed_date=timezone.now())

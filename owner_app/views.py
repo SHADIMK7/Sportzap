@@ -336,7 +336,8 @@ class OwnerDelete(generics.DestroyAPIView):
         
         
 class ChangePasswordOwner(APIView):
-    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsOwnerOnly]
 
     def post(self, request, *args, **kwargs):
         serializer = ChangePasswordSerializer(data=request.data)

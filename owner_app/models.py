@@ -18,7 +18,6 @@ class Abstract(AbstractUser):
     usertype = models.CharField(choices=TYPE_CHOICES, default='customer' ,max_length=30)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
-    
     def __str__(self):
         return self.username
     

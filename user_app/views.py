@@ -95,7 +95,7 @@ class CustomerRegistrationView(generics.CreateAPIView):
     
 class TurfAvailabilityShow(generics.RetrieveAPIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUserOnly]
+    # permission_classes = [IsUserOnly]
     serializer_class = UserBookingHistorySerializer
 
     def get_object(self):
@@ -232,8 +232,8 @@ class TurfAvailabilityShow(generics.RetrieveAPIView):
 
 class BookingView(generics.ListCreateAPIView):
     serializer_class = TurfBookingSerializer
-    # authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsUserOnly]
+    authentication_classes = [TokenAuthentication]
+    # permission_classes = [CustomerPermission]
 
     def get_queryset(self):
         pk = self.kwargs['pk']
@@ -799,7 +799,8 @@ class GalleryView(generics.ListCreateAPIView):
             
         
 class ProfileUpdateView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
     
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -1109,7 +1110,7 @@ class CreateTurfRating(generics.ListCreateAPIView):
                
 class RewardPoints(generics.ListAPIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUserOnly]
+    # permission_classes = [IsUserOnlyReward]
     serializer_class = RewardPointSerializer
     
     def get_queryset(self):
@@ -1139,7 +1140,7 @@ class RewardPoints(generics.ListAPIView):
     
     
 class UserBookingHistoryView(generics.ListAPIView):
-    # authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication]
     # permission_classes = [IsUserOnly]
     serializer_class = UserBookingHistorySerializer
 
@@ -1150,7 +1151,7 @@ class UserBookingHistoryView(generics.ListAPIView):
     
 class RedeemRewards(generics.ListCreateAPIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUserOnly]
+    # permission_classes = [IsUserOnly]
     serializer_class = RedeemRewardsSerializer
     
     def get_queryset(self):

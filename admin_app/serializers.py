@@ -56,7 +56,15 @@ class CustomerListSerializer(serializers.ModelSerializer):
     def get_booking_count(self, customer):
         booking_count = TurfBooking.objects.filter(user=customer).count()
         return booking_count
-    
+
+from django.utils import timezone
+from datetime import timedelta
+
+# class CustomerBookingCountSerializer(serializers.ModelSerializer):
+#    class Meta:
+#         model = TurfBooking
+#         fields = ['id',  'booking_count']
+
     
 class BookingSerializer(serializers.ModelSerializer):
     turf_name = serializers.StringRelatedField(source='turf.name')
@@ -100,15 +108,22 @@ class TransactionHistorySerializer(serializers.ModelSerializer):
 
 
 class TurfUpdateSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only='True')
+    id = serializers.IntegerField(read_only=True)
 
-    name = serializers.CharField(read_only='True')
-    location = serializers.CharField(read_only='True')
-    price = serializers.BooleanField(read_only='True')
-    image = serializers.ImageField(read_only='True')
-    description = serializers.CharField(read_only='True')
-    amenity = serializers.CharField(read_only='True')
+    name = serializers.CharField(read_only=True)
+    location = serializers.CharField(read_only=True)
+    price = serializers.BooleanField(read_only=True)
+    image = serializers.ImageField(read_only=True)
+    description = serializers.CharField(read_only=True)
+    amenity = serializers.CharField(read_only=True)
     is_active = serializers.BooleanField(default=False)
+
+    def update(self, instance, validated_data):
+        instance.is_active = validated_data.get('is_active', instance.is_active)
+
+        instance.save()
+        return instance
+    
 
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
@@ -158,3 +173,29 @@ class CustomerLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Abstract
         fields = ['latitude', 'longitude']        
+
+
+class MatchRatingSerializer(serializers.ModelSerializer):
+    match_id = serializers.IntegerField(source='id')
+    team_id = serializers.SerializerMethodField()
+    result = serializers.SerializerMethodField()
+    date = serializers.DateField(source='date_played')
+
+    def get_team_id(self, obj):
+        if obj.team1_score > obj.team2_score:
+            return obj.team1_id
+        elif obj.team1_score < obj.team2_score:
+            return obj.team2_id
+        return None
+
+    def get_result(self, obj):
+        if obj.team1_score > obj.team2_score:
+            return "win"
+        elif obj.team1_score < obj.team2_score:
+            return "loss"
+        return None
+
+
+    class Meta:
+        model = MatchRatingModel
+        fields = [ 'match_id', 'team_id', 'result', 'date']

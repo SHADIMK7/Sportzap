@@ -50,7 +50,7 @@ class Turf(models.Model):
     name = models.CharField(max_length=55)
     location = models.CharField(max_length=55)
     price = models.FloatField(default=0)
-    image = models.ImageField(upload_to='image/') 
+    image = models.ImageField(upload_to='image/', null=True) 
     description = models.CharField(max_length=255)
     amenity = models.ManyToManyField('Amenity')
     latitude = models.FloatField(null=True)

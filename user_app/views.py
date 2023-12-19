@@ -1077,16 +1077,18 @@ class CreateTurfRating(generics.ListCreateAPIView):
 #             return Response({'status': 'user_not_provided'})    
                
 class RewardPoints(generics.ListAPIView):
-    authentication_classes = [TokenAuthentication]
+    # authentication_classes=[TokenAuthentication]
     permission_classes = [IsUserOnlyReward]
     serializer_class = RewardPointSerializer
     
     def get_queryset(self):
-        pk = self.kwargs['pk']
+        # pk = self.kwargs['pk']
+        pk =self.request.user.pk
         return RewardPointModel.objects.filter(user=pk)
     
     def list(self,request , *args, **kwargs):
-        user = self.kwargs['pk']
+        # user = self.kwargs['pk']
+        user =self.request.user.pk
         print("permission",self.permission_classes)
         reward_points = RewardPointModel.objects.filter(user=user).aggregate(total_points=models.Sum('reward_points'))
         
@@ -1109,50 +1111,53 @@ class RewardPoints(generics.ListAPIView):
     
     
 class UserBookingHistoryView(generics.ListAPIView):
-    authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsUserOnly]
+    # authentication_classes = [TokenAuthentication]
+    permission_classes = [IsUserOnlyHistory]
     serializer_class = UserBookingHistorySerializer
 
     def get_queryset(self):
-        pk = self.kwargs['pk']
+        user = self.request.user
+        pk = Customer.objects.get(customer=user)
+        print("pk ",pk)
         return UserBookingHistory.objects.filter(user=pk)
+
     
+# class RedeemRewards(generics.ListCreateAPIView):
+#     authentication_classes = [TokenAuthentication]
+#     # permission_classes = [IsUserOnly]
+#     serializer_class = RedeemRewardsSerializer
     
-class RedeemRewards(generics.ListCreateAPIView):
-    authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsUserOnly]
-    serializer_class = RedeemRewardsSerializer
-    
-    def get_queryset(self):
-        pk = self.kwargs['pk']
-        return RedeemRewardsModel.objects.filter(user=pk)
+#     def get_queryset(self):
+#         pk = self.kwargs['pk']
+#         return RedeemRewardsModel.objects.filter(user=pk)
     
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
         
-        user = serializer.validated_data['user']
-        reward = serializer.validated_data.get('reward') 
-        print("reward", reward)
+#         pk = Customer.objects.filter(customer=request.user)
+#         user = pk
+#         reward = serializer.validated_data.get('reward') 
+#         print("reward", reward)
 
-        if not reward or user.reward_points < reward.reward_points:
-            print("reward points is ", user.reward_points)
-            # print("points for reward is ",reward.reward_points)
-            return Response({'status': "failed",'message': 'Not enough reward points or invalid reward','response_code':status.HTTP_400_BAD_REQUEST})
+#         if not reward or user.reward_points < reward.reward_points:
+#             print("reward points is ", user.reward_points)
+#             # print("points for reward is ",reward.reward_points)
+#             return Response({'status': "failed",'message': 'Not enough reward points or invalid reward','response_code':status.HTTP_400_BAD_REQUEST})
 
-        instance = serializer.save(redeemed_date=timezone.now())
+#         instance = serializer.save(redeemed_date=timezone.now())
 
-        user.reward_points -= reward.reward_points
-        user.save()
-        response_data = {
-                        'user': user.customer.username,
-                        'redeemed_reward': reward.reward_name,
-                        'redeemed_date': instance.redeemed_date if instance else None,
-                        'remaining_points': user.reward_points,
-                        }
+#         user.reward_points -= reward.reward_points
+#         user.save()
+#         response_data = {
+#                         'user': user.customer.username,
+#                         'redeemed_reward': reward.reward_name,
+#                         'redeemed_date': instance.redeemed_date if instance else None,
+#                         'remaining_points': user.reward_points,
+#                         }
 
-        return Response({'status':"success",'message': "Reward redeemed successfully",'response_code': status.HTTP_201_CREATED,"data":response_data,})
+#         return Response({'status':"success",'message': "Reward redeemed successfully",'response_code': status.HTTP_201_CREATED,"data":response_data,})
     
     
 

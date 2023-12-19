@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from .models import TurfBooking, RewardPointModel, PaymentHistoryModel, UserBookingHistory, Customer, AiTurfBookModel
+from .models import TurfBooking, RewardPointModel, PaymentHistoryModel, UserBookingHistory, Customer, AiTurfBookModel, RedeemRewardsModel
 from django.db import transaction
 from django.db.utils import IntegrityError
 

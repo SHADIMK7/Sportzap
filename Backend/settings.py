@@ -116,7 +116,6 @@ DATABASES = {
     }
 }
 
-print("getttttttt",os.getenv("DB_NAME"))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',

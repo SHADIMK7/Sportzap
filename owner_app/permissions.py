@@ -1,6 +1,6 @@
 from rest_framework import permissions
 from rest_framework import exceptions
-from owner_app.models import RewardPointModel, MatchRatingModel
+from owner_app.models import *
 
 class IsOwnerOnly(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -31,15 +31,50 @@ class IsUserOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         
-        if user.is_authenticated and user.usertype == "customer":
-            if RewardPointModel.objects.filter(user__customer__username=user.username):
+        if user.is_authenticated:
+            if user.usertype == "customer":
+                if not RewardPointModel.objects.filter(user__customer__username=user.username).exists():
+                    return True
+                else:
+                    response_data = {"status": "failed", "reason": "Unauthorized user"}
+                    raise exceptions.PermissionDenied(response_data)
+            else:
+                response_data = {"status": "failed", "reason": "You are not a customer"}
+                raise exceptions.PermissionDenied(response_data)
+        
+        
+class IsUserOnlyReward(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        print("IsUser", user)
+        if request.method == "GET" or "POST":
+            if user.is_authenticated and user.usertype == "customer":
+                print("entering customer")
+                if request.method == "POST" or request.method == "GET":
+                    if not RewardPointModel.objects.filter(user__customer__username=user.username).exists():
+                        print("Found customer")
+                        return True
+                    else:
+                        response_data = {"status": "failed", "reason": "Unauthorized user"}
+                        raise exceptions.PermissionDenied(response_data)
+            else:
+                response_data = {"status": "failed", "reason": "You are not a customer"}
+                raise exceptions.PermissionDenied(response_data)
+
+class CustomerPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        
+        if user.is_authenticated:
+            if user.usertype == "customer":
                 return True
             else:
-                response_data = {"status": "failed", "reason": "Unauthorized user"}
+                response_data = {"status": "failed", "reason": "You are not customer"}
                 raise exceptions.PermissionDenied(response_data)
         else:
-            response_data = {"status": "failed", "reason": "You are not a customer"}
+            response_data = {"status": "failed", "reason": "Unauthorized user"}
             raise exceptions.PermissionDenied(response_data)
+
 
     # def has_object_permission(self, request, view, obj):
     #     user = request.user
@@ -53,5 +88,30 @@ class IsUserOnly(permissions.BasePermission):
     #     else:
     #         response_data = {"status": "failed", "reason": "You are not a customer"}
     #         raise exceptions.PermissionDenied(response_data)
+            
+            
+            
+class IsUserOnlyHistory(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        print("IsUser", user)
+
+        if request.method == "GET" or "POST":
+            if user.is_authenticated and user.usertype == "customer":
+                print("entering customer")
+                if UserBookingHistory.objects.filter(user__customer__username=user.username).exists():
+                    print("Found customer")
+                    return True
+                elif RedeemRewardsModel.objects.filter(user__customer__username=user.username).exists():
+                    print("Found customer RedeemRewardsModel")
+                    return True
+                
+                else:
+                    response_data = {"status": "failed", "reason": "Unauthorized user"}
+                    raise exceptions.PermissionDenied(response_data)
+            else:
+                response_data = {"status": "failed", "reason": "You are not a customer"}
+                raise exceptions.PermissionDenied(response_data)
+            
             
             

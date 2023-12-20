@@ -91,7 +91,8 @@ class TeamSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Team
-        fields = '__all__'
+        # fields = '__all__'
+        exclude = ['team_user']
         
 class TeamInvitationSerializer(serializers.ModelSerializer):
 
@@ -210,7 +211,8 @@ class RedeemRewardsSerializer(serializers.ModelSerializer):
 class GallerySerializer(serializers.ModelSerializer):
     class Meta:
         model = Gallery
-        fields = '__all__'
+        # fields = '__all__'
+        exclude = ['user']
   
   
         

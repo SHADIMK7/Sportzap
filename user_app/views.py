@@ -684,6 +684,7 @@ class PlayerView(generics.ListCreateAPIView):
         else:
             team = Team.objects.filter(team_user = user.id).first()
             teams = team.id
+            print("Team",teams)
             serializer.save()
             response_data = {
                 'status': "success",

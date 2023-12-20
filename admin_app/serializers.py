@@ -86,14 +86,14 @@ class TransactionHistorySerializer(serializers.ModelSerializer):
     user_name = serializers.StringRelatedField(source='user.first_name')
     turf_name = serializers.StringRelatedField(source='turf.name')
     price = serializers.StringRelatedField(source="turf_booking.price")
-    amount_paid = serializers.StringRelatedField(source="turf_booking.amount_paid" )
-    balance = serializers.StringRelatedField(source = "turf_booking.balance")
+    # amount_paid = serializers.StringRelatedField(source="turf_booking.amount_paid" )
+    # balance = serializers.StringRelatedField(source = "turf_booking.balance")
     amount_credited_to_admin = serializers.SerializerMethodField()
     amount_credited_to_turf = serializers.SerializerMethodField()
 
     class Meta:
         model = PaymentHistoryModel
-        fields = ['id', 'turf_booking', 'turf_name', 'user_name','amount_paid','price','balance','amount_credited_to_admin','amount_credited_to_turf'] 
+        fields = ['id', 'turf_booking', 'turf_name', 'user_name','price','amount_credited_to_admin','amount_credited_to_turf'] 
 
     def get_amount_credited_to_admin(self, obj):
         turf_price = obj.turf_booking.price
@@ -102,8 +102,9 @@ class TransactionHistorySerializer(serializers.ModelSerializer):
 
     def get_amount_credited_to_turf(self, obj):
         amount_credited_to_admin = self.get_amount_credited_to_admin(obj)
+        turf_price = obj.turf_booking.price
         amount_paid_to_turf =obj.turf_booking.amount_paid
-        amount_credited_to_turf =  amount_paid_to_turf - amount_credited_to_admin
+        amount_credited_to_turf =  turf_price - amount_credited_to_admin
         return amount_credited_to_turf
 
 

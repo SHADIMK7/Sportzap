@@ -93,6 +93,7 @@ class ResetPass(APIView):
             to_email = email
 
             email = EmailMultiAlternatives(subject, plain_message, from_email, [to_email])
+            email.attach_alternative(message, "text/html")
 
             with open("media/image/placeholder.png", "rb") as f:
                 logo_data = f.read()

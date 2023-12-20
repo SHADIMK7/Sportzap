@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from .models import TurfBooking, RewardPointModel, PaymentHistoryModel, UserBookingHistory, Customer, AiTurfBookModel
+from .models import TurfBooking, RewardPointModel, PaymentHistoryModel, UserBookingHistory, Customer, AiTurfBookModel, RedeemRewardsModel
 from django.db import transaction
 from django.db.utils import IntegrityError
 
@@ -24,7 +24,7 @@ def create_date_and_time(sender, instance, created, **kwargs):
 
 @receiver(pre_save, sender = TurfBooking )
 def create_balance(sender, instance , **kwargs):
-    print("BALANCE STARTED")
+    # print("BALANCE STARTED")
     if instance.Payment_type != 'Offline':
         instance.balance = instance.price - instance.amount_paid
     else:
@@ -42,17 +42,17 @@ def create_balance(sender, instance , **kwargs):
   
 @receiver(post_save, sender=TurfBooking)
 def add_reward_points(sender, instance, **kwargs):
-    print("reward started")
+    # print("reward started")
     
     if instance.is_match_ended() and instance.user and isinstance(instance.user, Customer):
         reward_points = int(0.1 * instance.price)
         
         customer = instance.user
-        print("customer before:", customer.reward_points)
+        # print("customer before:", customer.reward_points)
         
         customer.reward_points += reward_points
         customer.save()
-        print("customer after:", customer.reward_points)
+        # print("customer after:", customer.reward_points)
 
         RewardPointModel.objects.create(user=instance.user, booking=instance, reward_points=reward_points)
         
@@ -60,7 +60,7 @@ def add_reward_points(sender, instance, **kwargs):
         
 @receiver(post_save, sender=TurfBooking)
 def create_payment_history(sender, instance, created, **kwargs):
-    print("Payment history")
+    # print("Payment history")
     if created:
         PaymentHistoryModel.objects.create(
             turf_booking=instance,
@@ -71,7 +71,7 @@ def create_payment_history(sender, instance, created, **kwargs):
         
 @receiver(post_save,sender = TurfBooking)
 def create_user_booking_history(sender, instance, created, **kwargs):
-    print("USER BOOKING HISTORY")
+    # print("USER BOOKING HISTORY")
     if created:
         UserBookingHistory.objects.create(
             turf_booked = instance,

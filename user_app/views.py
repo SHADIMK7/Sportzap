@@ -16,12 +16,14 @@ import requests
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from datetime import datetime, timedelta
-from owner_app.permissions import IsUserOnly
+from owner_app.permissions import *
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from email.mime.image import MIMEImage
 from django.conf import settings
+from rest_framework.exceptions import PermissionDenied
+
 
 
 
@@ -1158,16 +1160,19 @@ class CreateTurfRating(generics.ListCreateAPIView):
 #             return Response({'status': 'user_not_provided'})    
                
 class RewardPoints(generics.ListAPIView):
-    authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsUserOnlyReward]
+    # authentication_classes=[TokenAuthentication]
+    permission_classes = [IsUserOnlyReward]
     serializer_class = RewardPointSerializer
     
     def get_queryset(self):
-        pk = self.kwargs['pk']
+        # pk = self.kwargs['pk']
+        pk =self.request.user.pk
         return RewardPointModel.objects.filter(user=pk)
     
     def list(self,request , *args, **kwargs):
-        user = self.kwargs['pk']
+        # user = self.kwargs['pk']
+        user =self.request.user.pk
+        print("permission",self.permission_classes)
         reward_points = RewardPointModel.objects.filter(user=user).aggregate(total_points=models.Sum('reward_points'))
         
         if not reward_points['total_points']:
@@ -1189,48 +1194,63 @@ class RewardPoints(generics.ListAPIView):
     
     
 class UserBookingHistoryView(generics.ListAPIView):
-    authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsUserOnly]
+    # authentication_classes = [TokenAuthentication]
+    permission_classes = [IsUserOnlyHistory]
     serializer_class = UserBookingHistorySerializer
 
     def get_queryset(self):
-        pk = self.kwargs['pk']
+        user = self.request.user
+        pk = Customer.objects.get(customer=user)
+        print("pk ",pk)
         return UserBookingHistory.objects.filter(user=pk)
-    
+
     
 class RedeemRewards(generics.ListCreateAPIView):
     authentication_classes = [TokenAuthentication]
-    # permission_classes = [IsUserOnly]
+    permission_classes = [IsUserOnlyHistory]
     serializer_class = RedeemRewardsSerializer
-    
+
     def get_queryset(self):
-        pk = self.kwargs['pk']
-        return RedeemRewardsModel.objects.filter(user=pk)
-    
+        logged_user = self.request.user
+        if logged_user.usertype == "customer":
+            try:
+                user = Customer.objects.get(customer=logged_user)
+                return RedeemRewardsModel.objects.filter(user=user)
+            except Customer.DoesNotExist:
+                return RedeemRewardsModel.objects.none()
+        else:
+            raise PermissionDenied(detail="Logged user is not a customer.")
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        user = serializer.validated_data['user']
-        reward = serializer.validated_data.get('reward') 
+        logged_user = self.request.user
+        if logged_user.usertype == "customer":
+            try:
+                user = Customer.objects.get(customer=logged_user)
+            except Customer.DoesNotExist:
+                return Response({'status': "failed", 'message': 'User not found', 'response_code': status.HTTP_404_NOT_FOUND})
 
-        if not reward or user.reward_points < reward.reward_points:
-            return Response({'status': "failed",'message': 'Not enough reward points or invalid reward','response_code':status.HTTP_400_BAD_REQUEST})
+            reward = serializer.validated_data.get('reward') 
 
-        instance = serializer.save(redeemed_date=timezone.now())
+            if not reward or user.reward_points < reward.reward_points:
+                return Response({'status': "failed", 'message': 'Not enough reward points or invalid reward', 'response_code': status.HTTP_422_UNPROCESSABLE_ENTITY})
 
-        user.reward_points -= reward.reward_points
-        user.save()
-        response_data = {
-                        'user': user.customer.username,
-                        'redeemed_reward': reward.reward_name,
-                        'redeemed_date': instance.redeemed_date if instance else None,
-                        'remaining_points': user.reward_points,
-                        }
+            instance = serializer.save(redeemed_date=timezone.now())
 
-        return Response({'status':"success",'message': "Reward redeemed successfully",'response_code': status.HTTP_201_CREATED,"data":response_data,})
-    
-    
+            user.reward_points -= reward.reward_points
+            user.save()
+            instance = serializer.save(user=user)
 
+            response_data = {
+                'user': user.customer.username,
+                'redeemed_reward': reward.reward_name,
+                'redeemed_date': instance.redeemed_date if instance else None,
+                'remaining_points': user.reward_points,
+            }
 
+            return Response({'status': "success", 'message': "Reward redeemed successfully", 'response_code': status.HTTP_201_CREATED, "data": response_data})
+        
+        else:
+            raise PermissionDenied(detail="Logged user is not a customer.")

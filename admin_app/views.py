@@ -662,7 +662,7 @@ import requests
 
 class DisplayWeeklyIncomeData(APIView):
     def get(self, request, turf_id):
-        ai_backend_url = 'https://ff95-116-68-110-250.ngrok-free.app/income'
+        ai_backend_url = 'https://115a-116-68-110-250.ngrok-free.app/inco/income'
 
         try:
             response = requests.get(ai_backend_url)
@@ -682,7 +682,7 @@ class DisplayWeeklyIncomeData(APIView):
 
 class DisplayWeeklyBookingData(APIView):
     def get(self, request, turf_id):
-        ai_backend_url = 'https://ff95-116-68-110-250.ngrok-free.app/booking'
+        ai_backend_url = 'https://115a-116-68-110-250.ngrok-free.app/book/booking'
 
         try:
             response = requests.get(ai_backend_url)
@@ -830,7 +830,7 @@ class User_Player_Search(APIView):
 
 class playersLeaderBoard(APIView):
     def get(self, request):
-        ai_backend_url = 'https://ff95-116-68-110-250.ngrok-free.app/playerdata'
+        ai_backend_url = 'https://115a-116-68-110-250.ngrok-free.app/prob/playerdata'
 
         try:
 

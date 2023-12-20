@@ -65,7 +65,7 @@ class OwnerRetrieveDelete(generics.RetrieveDestroyAPIView):
 
 
 class CustomPagination(PageNumberPagination):
-    page_size = 3 
+    page_size = 10 
     # page_size_query_param = 'page_size'
 
 
@@ -274,23 +274,23 @@ class AdminIncomeView(APIView):
         first_day = current_date.replace(day=1)
         last_day = (current_date.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
         monthly_income = TurfBooking.objects.filter(
-            date__range=[first_day, last_day]).aggregate(total=Sum('amount_paid'))['total'] or 0
-        monthly_balance_amount = TurfBooking.objects.filter(
-            date__range=[first_day, last_day]).aggregate(total=Sum('balance'))['total'] or 0
+            date__range=[first_day, last_day]).aggregate(total=Sum('price'))['total'] or 0
+        # monthly_balance_amount = TurfBooking.objects.filter(
+        #     date__range=[first_day, last_day]).aggregate(total=Sum('balance'))['total'] or 0
 
         # Calculate yearly income
         year_first_day = current_date.replace(month=1, day=1)
         year_last_day = current_date.replace(month=12, day=31)
         yearly_income = TurfBooking.objects.filter(
-            date__range=[year_first_day, year_last_day]).aggregate(total=Sum('amount_paid'))['total'] or 0
-        yearly_balance_amount = TurfBooking.objects.filter(
-            date__range=[year_first_day, year_last_day]).aggregate(total=Sum('balance'))['total'] or 0
+            date__range=[year_first_day, year_last_day]).aggregate(total=Sum('price'))['total'] or 0
+        # yearly_balance_amount = TurfBooking.objects.filter(
+        #     date__range=[year_first_day, year_last_day]).aggregate(total=Sum('balance'))['total'] or 0
 
         data = {
             'monthly_income': monthly_income,
             'total_income': yearly_income,
-            'monthly_balance_amount':monthly_balance_amount,
-            'yearly_balance_amount':yearly_balance_amount
+            # 'monthly_balance_amount':monthly_balance_amount,
+            # 'yearly_balance_amount':yearly_balance_amount
         }
         
         return Response({"status": "success", "message": data, "response_code": status.HTTP_200_OK})

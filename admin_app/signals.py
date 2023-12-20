@@ -17,6 +17,8 @@ def update_leaderboard(sender, instance, created, **kwargs):
             match.team1_score if match.team1 == team else match.team2_score for match in team_matches
             )
             matches_attended = team_matches.count()
+            if matches_attended == 0 :
+                 matches_attended = 1
 
             leaderboard_entry, created = Leaderboard.objects.get_or_create(team=team)
             leaderboard_entry.team_name = team.team_name
@@ -36,7 +38,10 @@ def update_leaderboard(sender, instance, created, **kwargs):
                     number_of_wins += 1
 
             leaderboard_entry.number_of_wins = number_of_wins
+           
             leaderboard_entry.win_ratio = number_of_wins/matches_attended
             leaderboard_entry.aggregate_score_ratio = aggregate_score/matches_attended
 
             leaderboard_entry.save()
+            
+            

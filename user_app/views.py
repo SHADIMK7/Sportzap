@@ -291,12 +291,13 @@ class BookingView(generics.ListCreateAPIView):
             selected_turf = Turf.objects.get(pk=turf)
         except Turf.DoesNotExist:
             raise Http404("Turf does not exist")
-        serializer = self.get_serializer(data=request.data)        
-        user = request.data['user']
+        serializer = self.get_serializer(data=request.data)   
         date = request.data['date']
         start_time = request.data['start_time']
         end_time = request.data['end_time']
         price = request.data['price']
+        
+        user = self.request.user.id
         
         Booking_user = Abstract.objects.filter(id=user).first()
         email = Booking_user.email
@@ -323,15 +324,21 @@ class BookingView(generics.ListCreateAPIView):
                 'response_code': status.HTTP_400_BAD_REQUEST,
             })
         elif Payment_type == 'Offline_payment':
+            try:
+                customer = Customer.objects.get(id=user)
+            except Customer.DoesNotExist:
+                raise Http404("Customer does not exist")
             serializer.validated_data['turf'] = selected_turf
+            serializer.validated_data['user'] = customer
+
             serializer.save()
             
             message = render_to_string('booking.html', {'user': Booking_user,
-                                                                 'date': date,
-                                                                 'start': start_time,
-                                                                 'end': end_time,
-                                                                 'price': price,
-                                                                 'turf_name': selected_turf})
+                                                        'date': date,
+                                                        'start': start_time,
+                                                        'end': end_time,
+                                                        'price': price,
+                                                        'turf_name': selected_turf})
             plain_message = strip_tags(message)
 
             subject = 'Sportzap Regarding your booking'
@@ -478,10 +485,14 @@ class TeamView(generics.ListCreateAPIView):
     
     def post(self, request):
         user = self.request.user
+        print(user)
         # user = 1
         serializer = TeamSerializer(data = request.data)
         if serializer.is_valid():
-            user_instance = Customer.objects.get(customer_id=user.id)
+            user_instance = Customer.objects.filter(customer_id=user.id).first()
+            print(user_instance)
+            u = user_instance.id
+            print(u)
             team = serializer.save(team_user = user_instance)
             return Response({'status': "success",
                             'message': "Team adding Successful",
@@ -631,7 +642,7 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class PlayerView(generics.ListCreateAPIView):
     # permission_classes = [IsTeamCreator]
-    # authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication]
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
     
@@ -647,7 +658,6 @@ class PlayerView(generics.ListCreateAPIView):
         user = self.request.user
         team_id = self.request.data.get('team')
         print(user)
-        print(team_id)
 
         if team_id:
             team_strength_query = Team.objects.filter(id=team_id).first()
@@ -682,18 +692,36 @@ class PlayerView(generics.ListCreateAPIView):
                 }
                 raise serializers.ValidationError(response_data)
         else:
-            team = Team.objects.filter(team_user = user.id).first()
-            teams = team.id
-            print("Team",teams)
-            serializer.save()
-            response_data = {
-                'status': "success",
-                'message': f"{'Saved to team selected'}",
-                'team_id': teams,
-                'response_code': status.HTTP_200_OK,
-                'data': serializer.data,
-            }
-            raise serializers.ValidationError(response_data)
+            customer = Customer.objects.filter(customer_id = user.id).first()
+            if customer: 
+                team = Team.objects.filter(team_user_id = customer).first()
+                if team:
+                    teams = team.id
+                    serializer.save()
+                    response_data = {
+                        'status': "success",
+                        'message': f"{'Saved to team selected'}",
+                        'team_id': teams,
+                        'response_code': status.HTTP_200_OK,
+                        'data': serializer.data,
+                    }
+                    raise serializers.ValidationError(response_data)
+                else: 
+                    response_data = {
+                        'status': "error",
+                        'message': f"{'Team not found'}",
+                        'response_code': status.HTTP_404_NOT_FOUND,
+                        'data': {},
+                    }
+                    raise serializers.ValidationError(response_data)
+            else: 
+                response_data = {
+                    'status': "error",
+                    'message': f"{'Customer not found'}",
+                    'response_code': status.HTTP_404_NOT_FOUND,
+                    'data': {},
+                }
+                raise serializers.ValidationError(response_data)
 
 def process_profile_pic_with_ai(player_pic):
     try:
@@ -755,9 +783,9 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
         else:
             data = serializer.errors
             return Response({'status': "error",
-                                'message': "updation unsuccessful",
-                                'response_code': status.HTTP_403_FORBIDDEN,
-                                'data': data})
+                            'message': "updation unsuccessful",
+                            'response_code': status.HTTP_403_FORBIDDEN,
+                            'data': data})
             
         
     def delete(self,request,pk):
@@ -824,8 +852,10 @@ class ProfileUpdateView(APIView):
         return Response({'status': "success",
                         'message': "PRofile fetching Successful",
                         'response_code': status.HTTP_200_OK,
-                        'abstract': abstract_serializer.data,
-                        'profile': profile_serializer.data})
+                        'abstract': {
+                                        **abstract_serializer.data,
+                                        **profile_serializer.data
+                                    }})
 
     def put(self, request, *args, **kwargs):
         user = request.user
@@ -1076,18 +1106,25 @@ class MatchAcceptInvitationView(generics.UpdateAPIView):
  
  
 class CreateTurfRating(generics.ListCreateAPIView):
+    authentication_classes=[TokenAuthentication]
     queryset = TurfRating.objects.all()
     serializer_class = TurfRatingSerializer
     
-    def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = TurfRatingSerializer(queryset, many=True)
-        return Response(serializer.data)
+    # def get(self, request, *args, **kwargs):
+    #     queryset = self.get_queryset()
+    #     serializer = TurfRatingSerializer(queryset, many=True)
+    #     return Response(serializer.data)
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return TurfRating.objects.filter(turfid=pk)
     
-    def create(self, request):
-        data = request.data
-        user = data.get('userid')
-        turf_id = data.get('turfid')
+    def create(self, request, *args, **kwargs):
+        # data = request.data
+        user = self.request.user.id
+        # user = data.get('userid')
+        turf_id = self.kwargs['pk']
+        print(turf_id)
+        print(user)
 
         if user:
             turf = Turf.objects.filter(id=turf_id).first()
@@ -1098,7 +1135,7 @@ class CreateTurfRating(generics.ListCreateAPIView):
                 serializer.save()
                 
                 # Get the AI response from the external URL
-                ai_url = "https://b2cf-116-68-110-250.ngrok-free.app/sentiment"
+                ai_url = "https://61bd-116-68-110-250.ngrok-free.app/sentiment/sentiment"
                 ai_response = requests.get(ai_url).json()
                 
                 turf_rating_data = [item for item in ai_response if item.get('turfid') == int(turf_id)]
@@ -1109,11 +1146,25 @@ class CreateTurfRating(generics.ListCreateAPIView):
                     turf.ai_rating = weighted_rating
                     turf.save()
 
-                    return Response({'status': 'saved'})
+                    return Response({'status': "success",
+                            'message': "Rating saved",
+                            'response_code': status.HTTP_200_OK,
+                            'data': serializer.data})
                 else:
-                    return Response({'status': 'unsaved'})
+                    return Response({'status': "error",
+                            'message': "Rating unsaved",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': '{}'})
             else:
-                return Response({'status': 'unsaved'})
+                return Response({'status': "error",
+                            'message': "Turf not provided",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': '{}'})
+        else:
+            return Response({'status': "error",
+                        'message': "Not a user",
+                        'response_code': status.HTTP_400_BAD_REQUEST,
+                        'data': '{}'})
 
  
 

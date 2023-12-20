@@ -642,7 +642,10 @@ class PlayerView(generics.ListCreateAPIView):
             processed_image_content = processed_image
             serializer.validated_data['player_pic'] = processed_image_content
             
+        user = self.request.user
         team_id = self.request.data.get('team')
+        print(user)
+        print(team_id)
 
         if team_id:
             team_strength_query = Team.objects.filter(id=team_id).first()
@@ -653,9 +656,9 @@ class PlayerView(generics.ListCreateAPIView):
                 if players_count >= team_strength:
                     response_data = {
                         'status': "error",
-                        'message': 'Team has reached the maximum number of players.',
+                        'message': f"{' Team has reached the maximum number of players. Your team strength is:', team_strength}",
                         'response_code': status.HTTP_403_FORBIDDEN,
-                        'team_strength': team_strength
+                        'data': "{}"
                     }
                     raise serializers.ValidationError(response_data)
                 else:
@@ -663,8 +666,8 @@ class PlayerView(generics.ListCreateAPIView):
                     response_data = {
                         'status': "success",
                         'message': 'Player added successfully',
+                        'team_id': team_id,
                         'response_code': status.HTTP_200_OK,
-                        'team_strength': team_strength,
                         'data': serializer.data
                     }
                     return Response(response_data)
@@ -672,16 +675,20 @@ class PlayerView(generics.ListCreateAPIView):
                 response_data = {
                     'status': "error",
                     'message': 'Team not found',
-                    'response_code': status.HTTP_404_NOT_FOUND
+                    'response_code': status.HTTP_404_NOT_FOUND,
+                    'data': "{}"
                 }
                 raise serializers.ValidationError(response_data)
         else:
+            team = Team.objects.filter(team_user = user.id).first()
+            teams = team.id
             serializer.save()
             response_data = {
                 'status': "success",
-                'message': 'Saved but no team selected',
+                'message': f"{'Saved to team selected'}",
+                'team_id': teams,
+                'response_code': status.HTTP_200_OK,
                 'data': serializer.data,
-                'response_code': status.HTTP_200_OK
             }
             raise serializers.ValidationError(response_data)
 
@@ -876,46 +883,88 @@ class UserDelete(generics.DestroyAPIView):
 class TeamInvitationView(generics.CreateAPIView):
     serializer_class = TeamInvitationSerializer
 
+    # def create(self, request, *args, **kwargs):
+    #     team_id = request.data.get('team')
+    #     player_id = request.data.get('player')
+        
+    #     # user_id = request.data.get('user')  # Add user ID to the request data
+
+    #     try:
+    #         team = Team.objects.filter(pk=team_id).first()
+    #         player = Player.objects.filter(pk=player_id).first()
+    #         # user = Player.objects.get(pk=user_id)  # Fetch the user
+    #         my_team_players = team.players.all()
+    #         print(my_team_players)
+    #     except (Team.DoesNotExist, Player.DoesNotExist):
+    #         return Response({'status': "error",
+    #                         'message': "Invalid team, player, or user ID",
+    #                         'response_code': status.HTTP_400_BAD_REQUEST,
+    #                         'data': ''})
+
+    #     if team.players.count() >= team.team_strength:
+    #         return Response({'status': "error",
+    #                         'message': "Team is full",
+    #                         'response_code': status.HTTP_400_BAD_REQUEST,
+    #                         'data': ''})
+            
+
+    #     if team.players.filter(pk=player_id).exists():
+    #         return Response({'status': "error",
+    #                         'message': "Player is already in the team",
+    #                         'response_code': status.HTTP_400_BAD_REQUEST,
+    #                         'data': ''})
+
+    #     # Check if the user sending the invitation is a team member
+    #     # if user not in team.players.all():
+    #     #     return Response({"error": "You are not a member of this team"}, status=status.HTTP_403_FORBIDDEN)
+
+    #     invitation = TeamInvitation.objects.create(team=team, player=player)
+    #     return Response({'status': "success",
+    #                         'message': "invitation successfully",
+    #                         "invitation_id": invitation.id,
+    #                         'response_code': status.HTTP_201_CREATED,
+    #                         'data': ''})
+    
     def create(self, request, *args, **kwargs):
         team_id = request.data.get('team')
         player_id = request.data.get('player')
-        
-        # user_id = request.data.get('user')  # Add user ID to the request data
 
         try:
             team = Team.objects.filter(pk=team_id).first()
             player = Player.objects.filter(pk=player_id).first()
-            # user = Player.objects.get(pk=user_id)  # Fetch the user
+
+            if team is None or player is None:
+                return Response({'status': "error",
+                                'message': "Invalid team or player ID",
+                                'response_code': status.HTTP_400_BAD_REQUEST,
+                                'data': ''})
+
             my_team_players = team.players.all()
             print(my_team_players)
-        except (Team.DoesNotExist, Player.DoesNotExist):
-            return Response({'status': "error",
-                            'message': "Invalid team, player, or user ID",
-                            'response_code': status.HTTP_400_BAD_REQUEST,
-                            'data': ''})
 
-        if team.players.count() >= team.team_strength:
-            return Response({'status': "error",
-                            'message': "Team is full",
-                            'response_code': status.HTTP_400_BAD_REQUEST,
-                            'data': ''})
-            
+            if team.players.count() >= team.team_strength:
+                return Response({'status': "error",
+                                'message': "Team is full",
+                                'response_code': status.HTTP_400_BAD_REQUEST,
+                                'data': ''})
 
-        if team.players.filter(pk=player_id).exists():
-            return Response({'status': "error",
-                            'message': "Player is already in the team",
-                            'response_code': status.HTTP_400_BAD_REQUEST,
-                            'data': ''})
+            if team.players.filter(pk=player_id).exists():
+                return Response({'status': "error",
+                                'message': "Player is already in the team",
+                                'response_code': status.HTTP_400_BAD_REQUEST,
+                                'data': ''})
 
-        # Check if the user sending the invitation is a team member
-        # if user not in team.players.all():
-        #     return Response({"error": "You are not a member of this team"}, status=status.HTTP_403_FORBIDDEN)
-
-        invitation = TeamInvitation.objects.create(team=team, player=player)
-        return Response({'status': "success",
-                            'message': "invitation successfully",
+            invitation = TeamInvitation.objects.create(team=team, player=player)
+            return Response({'status': "success",
+                            'message': "Invitation successfully created",
                             "invitation_id": invitation.id,
                             'response_code': status.HTTP_201_CREATED,
+                            'data': ''})
+
+        except (Team.DoesNotExist, Player.DoesNotExist):
+            return Response({'status': "error",
+                            'message': "Invalid team or player ID",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
                             'data': ''})
 
 class AcceptInvitationView(generics.UpdateAPIView):

@@ -25,11 +25,12 @@ def create_date_and_time(sender, instance, created, **kwargs):
 @receiver(pre_save, sender = TurfBooking )
 def create_balance(sender, instance , **kwargs):
     # print("BALANCE STARTED")
-    if instance.Payment_type != 'Offline':
-        instance.balance = instance.price - instance.amount_paid
-    else:
-        instance.balance = instance.price
-        instance.amount_paid = instance.price
+    instance.balance = 0
+    instance.amount_paid = instance.price
+    # print("BALANCE TYPE NOT OFFLINE", instance.balance)
+    # else:
+    #     instance.balance = 0
+    #     print("BALANCE TYPE OFFLINE", instance.balance)
         
 # @receiver(pre_save, sender = TurfBooking)
 # def create_username(self, request, sender, instance, **kwargs):

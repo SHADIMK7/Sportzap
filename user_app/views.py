@@ -297,6 +297,12 @@ class BookingView(generics.ListCreateAPIView):
         start_time = request.data['start_time']
         end_time = request.data['end_time']
         price = request.data['price']
+        if self.is_time_slot_booked(turf, date, start_time, end_time):
+            return Response({
+                'status': "error",
+                'message': "Turf is already booked for the specified time slot",
+                'response_code': status.HTTP_400_BAD_REQUEST,
+            })
         
         user = self.request.user.id
         
@@ -374,7 +380,23 @@ class BookingView(generics.ListCreateAPIView):
                 'message': "Invalid payment method",
                 'response_code': status.HTTP_400_BAD_REQUEST,
             })
-    
+            
+    def is_time_slot_booked(self, turf_id, date, start_time, end_time):
+        try:
+            selected_turf = Turf.objects.get(pk=turf_id)
+
+            if end_time <= start_time:
+                return True
+            if_bookings = TurfBooking.objects.filter(
+                turf=selected_turf,
+                date=date,
+                start_time__lt=end_time,
+                end_time__gt=start_time
+            ).exists()
+
+            return if_bookings
+        except Turf.DoesNotExist:
+            raise Http404("Turf does not exist")
 #-----------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------
 # class TurfBookingAIView(APIView):

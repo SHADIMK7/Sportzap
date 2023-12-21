@@ -23,6 +23,7 @@ urlpatterns = [
     path('turf_rating/<int:pk>/', CreateTurfRating.as_view(), name='turf_rating'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('reward-points/', RewardPoints.as_view(), name='reward-points'),
+    path('turf-booked-history/<int:pk>/', TurfBookedHistory.as_view(),name="turf-booked-history"),
     # path('rewards/<int:pk>/', RewardPoints.as_view(), name='rewards'),
     # path('sync/', BookingSyncView.as_view(), name='booking_sync'),
     # path('api/turf-booking-ai/', TurfBookingAIView.as_view(), name='turf-booking-ai'),

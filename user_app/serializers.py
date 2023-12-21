@@ -84,6 +84,11 @@ class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
         fields = ['id', 'player_name', 'player_skill', 'player_pic', 'player_position']
+        
+class AllPlayerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Player
+        fields = ['id', 'player_name', 'player_skill', 'player_pic', 'player_position', 'player_user']
 
         
 class TeamSerializer(serializers.ModelSerializer):

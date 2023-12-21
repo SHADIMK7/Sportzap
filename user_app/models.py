@@ -42,12 +42,14 @@ class Player(models.Model):
     invitation_pending = models.BooleanField(default=False) 
     player_longitude = models.FloatField(null=True)
     player_latitude = models.FloatField(null=True)
+    player_user = models.ForeignKey('owner_app.Customer', on_delete=models.CASCADE)
     
     
     def __str__(self):
         return self.player_name
     
 class TeamInvitation(models.Model):
+    user = models.ForeignKey('owner_app.Customer', on_delete=models.CASCADE)
     team = models.ForeignKey('Team', related_name='invitations', on_delete=models.CASCADE)
     player = models.ForeignKey('Player', on_delete=models.CASCADE)
     is_accepted = models.BooleanField(default=False)
@@ -57,6 +59,7 @@ class TeamInvitation(models.Model):
     
     
 class MatchInvitation(models.Model):
+    user = models.ForeignKey('owner_app.Customer', on_delete=models.CASCADE)
     sender_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='sender')
     receiver_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='receiver')
     is_accepted = models.BooleanField(default=False)

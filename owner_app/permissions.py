@@ -94,13 +94,14 @@ class CustomerPermission(permissions.BasePermission):
 class IsUserOnlyHistory(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        # print("IsUser", user)
+        print("IsUser", user)
 
         if request.method == "GET" or "POST":
             if user.is_authenticated and user.usertype == "customer":
-                # print("entering customer")
-                if UserBookingHistory.objects.filter(user__customer__username=user.username).exists():
-                    # print("Found customer")
+                print("entering customer")
+                print("user username",user.username)
+                if UserBookingHistory.objects.filter(user__customer_name=user.username).exists():
+                    print("Found customer")
                     return True
                 elif RedeemRewardsModel.objects.filter(user__customer__username=user.username).exists():
                     # print("Found customer RedeemRewardsModel")
@@ -115,3 +116,22 @@ class IsUserOnlyHistory(permissions.BasePermission):
             
             
             
+class IsUserOnlyBookingHistory(permissions.BasePermission):
+    def  has_permission(self,request,view):
+        if request.method == "GET":
+            user = request.user
+            if user.is_authenticated:
+                if user.usertype == "customer":
+                    print("user is", user)
+                    print("user customer",user.username)
+                    if UserBookingHistory.objects.filter(user__customer=user):
+                        return True
+                    else:
+                        response_data = {"status": "failed", "reason": "This is not your booking history"}
+                        raise exceptions.PermissionDenied(response_data)
+                else:
+                    response_data = {"status": "failed", "reason": "You are not customer"}
+                    raise exceptions.PermissionDenied(response_data)
+            else:
+                response_data = {"status": "failed", "reason": "You are not authorized"}
+                raise exceptions.PermissionDenied(response_data)

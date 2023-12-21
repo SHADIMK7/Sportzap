@@ -1247,13 +1247,13 @@ class RewardPoints(generics.ListAPIView):
     
 class UserBookingHistoryView(generics.ListAPIView):
     # authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUserOnlyHistory]
+    # permission_classes = [IsUserOnlyBookingHistory]
     serializer_class = UserBookingHistorySerializer
 
     def get_queryset(self):
         user = self.request.user
         pk = Customer.objects.get(customer=user)
-        # print("pk ",pk)
+        print("pk ",pk)
         return UserBookingHistory.objects.filter(user=pk)
 
     

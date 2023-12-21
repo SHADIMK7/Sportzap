@@ -132,6 +132,7 @@ class BookingView(generics.ListCreateAPIView):
 
     def perform_create(self, request, serializer):
         # user = 1 
+        # print("PERFORM CREATE")
         user = self.request.user
         turf = self.kwargs['pk']
 
@@ -185,6 +186,12 @@ class BookingView(generics.ListCreateAPIView):
         start_time = request.data['start_time']
         end_time = request.data['end_time']
         price = request.data['price']
+        if self.is_time_slot_booked(turf, date, start_time, end_time):
+            return Response({
+                'status': "error",
+                'message': "Turf is already booked for the specified time slot",
+                'response_code': status.HTTP_400_BAD_REQUEST,
+            })
         
         user = self.request.user.id
         
@@ -213,9 +220,14 @@ class BookingView(generics.ListCreateAPIView):
                 'response_code': status.HTTP_400_BAD_REQUEST,
             })
         elif Payment_type == 'Offline_payment':
+            # print("OFFLINE_PAYMENT")
             try:
-                customer = Customer.objects.get(id=user)
+                # print("USER IS ",user)
+                customer = Customer.objects.get(customer=user)
+                
+                # print("customer",customer)
             except Customer.DoesNotExist:
+                # print("CUSTOMER MISSING")
                 raise Http404("Customer does not exist")
             serializer.validated_data['turf'] = selected_turf
             serializer.validated_data['user'] = customer
@@ -257,6 +269,111 @@ class BookingView(generics.ListCreateAPIView):
                 'message': "Invalid payment method",
                 'response_code': status.HTTP_400_BAD_REQUEST,
             })
+            
+    def is_time_slot_booked(self, turf_id, date, start_time, end_time):
+        try:
+            selected_turf = Turf.objects.get(pk=turf_id)
+
+            if end_time <= start_time:
+                return True
+            if_bookings = TurfBooking.objects.filter(
+                turf=selected_turf,
+                date=date,
+                start_time__lt=end_time,
+                end_time__gt=start_time
+            ).exists()
+
+            return if_bookings
+        except Turf.DoesNotExist:
+            raise Http404("Turf does not exist")
+#-----------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------
+# class TurfBookingAIView(APIView):
+#     def post(self, request, *args, **kwargs):
+#         serializer = TurfBookingAISerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+
+#         user = serializer.validated_data.get('user')
+#         user_id = user.id
+#         print("user id is", user_id)
+#         if user_id is None:
+#             return Response({'error': 'User ID not provided in the request data'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         date_obj = serializer.validated_data.get('date')
+#         start_time_obj = serializer.validated_data.get('start_time')
+#         end_time_obj = serializer.validated_data.get('end_time')
+#         price = serializer.validated_data.get('price')
+#         turf = serializer.validated_data.get('turf')
+#         turf_id = turf.id
+
+#         formatted_date = date_obj.strftime('%Y-%m-%d')
+#         formatted_start_time = start_time_obj.strftime('%H:%M:%S')
+#         formatted_end_time = end_time_obj.strftime('%H:%M:%S')
+
+#         ai_endpoint = 'https://5673-116-68-110-250.ngrok-free.app/dynamic_discount'
+#         print("ai is price is ", price)
+#         three_months = datetime.now() - timedelta(days=90)
+
+#         booking_count = TurfBooking.objects.filter(user=user_id, date__gte=three_months).count()
+#         print("BOOKING COUNT IN LAST 3 MONTHS IS ", booking_count)
+#         ai_data = {
+#             'user': user_id,
+#             'date': formatted_date,
+#             'start_time': formatted_start_time,
+#             'end_time': formatted_end_time,
+#             'price': price,
+#             'turf': turf_id,
+#             'booking_count':booking_count
+#         }
+
+#         # Initialize ai_response here
+#         ai_response = None
+
+#         try:
+#             # Make a POST request to the AI service
+#             ai_response = requests.post(ai_endpoint, json=ai_data)
+#             ai_response.raise_for_status()  # Raise an exception for bad responses
+
+#             # Check if 'dpiscount_price' key is present in the JSON response
+#             if 'discount_price' in ai_response.json():
+#                 # Get the modified price from the AI service response
+#                 modified_price = ai_response.json()['discount_price']
+#                 print("modified price is ", modified_price)
+
+#                 # Create a new AiTurfBookModel instance with the modified price
+#                 AiTurfBookModel.objects.create(
+#                     user=user,
+#                     date=date_obj,
+#                     start_time=start_time_obj,
+#                     end_time=end_time_obj,
+#                     price=modified_price,
+#                     turf=turf
+#                 )
+
+#                 # Return the modified price to the frontend
+#                 return Response({'modified_price': modified_price, 'date': date_obj, 'start_time': start_time_obj,
+#                                  'end_time': end_time_obj, 'turf': turf.id, 'user': user.id},
+#                                 status=status.HTTP_200_OK)
+#             else:
+#                 # Print the entire response content for debugging
+#                 print(f"Unexpected response format. Response content: {ai_response.content}")
+
+#                 # Handle the case where 'discount_price' key is not present
+#                 return Response({'error': 'Invalid response format'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#         except requests.RequestException as e:
+#             # Log the error and print the response content
+#             print(f"Error: {str(e)}")
+#             print(f"Response content: {ai_response.content if ai_response else 'No response'}")
+
+#             # Return a more informative response
+#             return Response({'error': 'Error making request to AI service'},
+#                             status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+
+
+#-------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------------
     
 # class TurfDisplayView(generics.ListAPIView):
 #     queryset = Turf.objects.all()
@@ -948,7 +1065,7 @@ class RewardPoints(generics.ListAPIView):
     def list(self,request , *args, **kwargs):
         # user = self.kwargs['pk']
         user =self.request.user.pk
-        print("permission",self.permission_classes)
+        # print("permission",self.permission_classes)
         reward_points = RewardPointModel.objects.filter(user=user).aggregate(total_points=models.Sum('reward_points'))
         
         if not reward_points['total_points']:
@@ -971,13 +1088,13 @@ class RewardPoints(generics.ListAPIView):
     
 class UserBookingHistoryView(generics.ListAPIView):
     # authentication_classes = [TokenAuthentication]
-    permission_classes = [IsUserOnlyHistory]
+    # permission_classes = [IsUserOnlyBookingHistory]
     serializer_class = UserBookingHistorySerializer
 
     def get_queryset(self):
         user = self.request.user
         pk = Customer.objects.get(customer=user)
-        print("pk ",pk)
+        # print("pk ",pk)
         return UserBookingHistory.objects.filter(user=pk)
 
     
@@ -1030,3 +1147,12 @@ class RedeemRewards(generics.ListCreateAPIView):
         
         else:
             raise PermissionDenied(detail="Logged user is not a customer.")
+        
+        
+        
+class TurfBookedHistory(generics.ListAPIView):
+    serializer_class = TurfBookingSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return TurfBooking.objects.filter(turf=pk)

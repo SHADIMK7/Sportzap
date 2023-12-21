@@ -485,14 +485,14 @@ class TeamView(generics.ListCreateAPIView):
     
     def post(self, request):
         user = self.request.user
-        print(user)
+        # print(user)
         # user = 1
         serializer = TeamSerializer(data = request.data)
         if serializer.is_valid():
             user_instance = Customer.objects.filter(customer_id=user.id).first()
-            print(user_instance)
+            # print(user_instance)
             u = user_instance.id
-            print(u)
+            # print(u)
             team = serializer.save(team_user = user_instance)
             return Response({'status': "success",
                             'message': "Team adding Successful",
@@ -657,7 +657,7 @@ class PlayerView(generics.ListCreateAPIView):
             
         user = self.request.user
         team_id = self.request.data.get('team')
-        print(user)
+        # print(user)
 
         if team_id:
             team_strength_query = Team.objects.filter(id=team_id).first()
@@ -973,7 +973,7 @@ class TeamInvitationView(generics.CreateAPIView):
                                 'data': ''})
 
             my_team_players = team.players.all()
-            print(my_team_players)
+            # print(my_team_players)
 
             if team.players.count() >= team.team_strength:
                 return Response({'status': "error",
@@ -1123,8 +1123,8 @@ class CreateTurfRating(generics.ListCreateAPIView):
         user = self.request.user.id
         # user = data.get('userid')
         turf_id = self.kwargs['pk']
-        print(turf_id)
-        print(user)
+        # print(turf_id)
+        # print(user)
 
         if user:
             turf = Turf.objects.filter(id=turf_id).first()
@@ -1224,7 +1224,7 @@ class RewardPoints(generics.ListAPIView):
     def list(self,request , *args, **kwargs):
         # user = self.kwargs['pk']
         user =self.request.user.pk
-        print("permission",self.permission_classes)
+        # print("permission",self.permission_classes)
         reward_points = RewardPointModel.objects.filter(user=user).aggregate(total_points=models.Sum('reward_points'))
         
         if not reward_points['total_points']:
@@ -1253,7 +1253,7 @@ class UserBookingHistoryView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         pk = Customer.objects.get(customer=user)
-        print("pk ",pk)
+        # print("pk ",pk)
         return UserBookingHistory.objects.filter(user=pk)
 
     

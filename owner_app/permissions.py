@@ -46,13 +46,13 @@ class IsUserOnly(permissions.BasePermission):
 class IsUserOnlyReward(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        print("IsUser", user)
+        # print("IsUser", user)
         if request.method == "GET" or "POST":
             if user.is_authenticated and user.usertype == "customer":
-                print("entering customer")
+                # print("entering customer")
                 if request.method == "POST" or request.method == "GET":
                     if not RewardPointModel.objects.filter(user__customer__username=user.username).exists():
-                        print("Found customer")
+                        # print("Found customer")
                         return True
                     else:
                         response_data = {"status": "failed", "reason": "Unauthorized user"}
@@ -94,16 +94,16 @@ class CustomerPermission(permissions.BasePermission):
 class IsUserOnlyHistory(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        print("IsUser", user)
+        # print("IsUser", user)
 
         if request.method == "GET" or "POST":
             if user.is_authenticated and user.usertype == "customer":
-                print("entering customer")
+                # print("entering customer")
                 if UserBookingHistory.objects.filter(user__customer__username=user.username).exists():
-                    print("Found customer")
+                    # print("Found customer")
                     return True
                 elif RedeemRewardsModel.objects.filter(user__customer__username=user.username).exists():
-                    print("Found customer RedeemRewardsModel")
+                    # print("Found customer RedeemRewardsModel")
                     return True
                 
                 else:

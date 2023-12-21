@@ -689,7 +689,7 @@ class DisplayWeeklyBookingData(APIView):
             response.raise_for_status()
             
             booking_data = response.json()
-            print(booking_data)
+            # print(booking_data)
             for booking in booking_data:
                 if turf_id == booking.get('turf_id'):
                     turf_booking = booking

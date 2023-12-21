@@ -94,16 +94,19 @@ class CustomerPermission(permissions.BasePermission):
 class IsUserOnlyHistory(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        # print("IsUser", user)
+        print("IsUser", user)
 
         if request.method == "GET" or "POST":
             if user.is_authenticated and user.usertype == "customer":
                 # print("entering customer")
-                if UserBookingHistory.objects.filter(user__customer__username=user.username).exists():
-                    # print("Found customer")
+                # print("user username",user.username)
+                # if UserBookingHistory.objects.filter(user__customer_name=user.username).exists():
+                #     print("Found customer")
+                #     return True
+                if not RedeemRewardsModel.objects.filter(user__customer__username=user.username).exists():
+                    # print("Found customer RedeemRewardsModel")
                     return True
                 elif RedeemRewardsModel.objects.filter(user__customer__username=user.username).exists():
-                    # print("Found customer RedeemRewardsModel")
                     return True
                 
                 else:

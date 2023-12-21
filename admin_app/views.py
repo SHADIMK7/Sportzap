@@ -669,12 +669,15 @@ class DisplayWeeklyIncomeData(APIView):
             response.raise_for_status()
             
             income_data = response.json()
+            print(income_data)
+            turf_income = None
             for income in income_data:
                 if turf_id == income.get('turf__id'):
                     turf_income = income
-
+                    break
+                      
             return Response({"status": "success", "message": turf_income,"response_code": status.HTTP_200_OK})
-        
+            
         except requests.RequestException:
             return Response({"status": "failure", "message": "Request failed: "})            
 
@@ -689,10 +692,11 @@ class DisplayWeeklyBookingData(APIView):
             response.raise_for_status()
             
             booking_data = response.json()
-            print(booking_data)
+            turf_booking = None
             for booking in booking_data:
-                if turf_id == booking.get('turf_id'):
+                if turf_id == booking.get('turf__id'):
                     turf_booking = booking
+                    
             return Response({"status": "success", "message": turf_booking,"response_code": status.HTTP_200_OK})
         
         except requests.RequestException:
@@ -850,6 +854,7 @@ class playersLeaderBoard(APIView):
                 if players.filter(id=player_id).exists():
                     player_info['image'] = request.build_absolute_uri(player.player_pic.url)
                     player_info['name'] = player.player_name
+                    player_info['skill']=player.player_skill
                     matching_players.append(player_info)
             matching_players.sort(key=lambda x: x['win_ratio'], reverse=True)
 
@@ -880,7 +885,35 @@ class CustomerBookingCount(APIView):
     
 
 
+class NotificationToOwner(APIView):
+    def get(self, request, owner__id):
+        ai_backend_url = 'https://1a23-116-68-110-250.ngrok-free.app/anom/send_notifications'
+
+        try:
+            response = requests.get(ai_backend_url)
+            response.raise_for_status()
+            
+            notifications = response.json()
+            for msg in notifications:
+                turfname = msg.get('turf_name')
+                owner_id = msg.get('owner_id')
+                message = msg.get('message')
+                owner_notification = None
+                if owner__id == owner_id: 
+                    owner_notification = {
+                        "owner_id" : owner_id,
+                        "turf_name":turfname,
+                        "message": message
+                    }
+               
+                    return Response({"status": "success", "message": owner_notification,"response_code": status.HTTP_200_OK})
+                
+
+        except requests.RequestException:
+            return Response({"status": "failure", "message": "Request failed: "})            
+
    
+
 
 # from geopy.geocoders import Nominatim
 

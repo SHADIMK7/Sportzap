@@ -23,7 +23,7 @@ class AbstractUserSerializer(serializers.ModelSerializer):
 
 class OwnerSerializer(serializers.ModelSerializer):
 
-    name = serializers.StringRelatedField(source='abstract.first_name')
+    name = serializers.StringRelatedField(source='abstract.username')
     email = serializers.StringRelatedField(source='abstract.email')
     phone = serializers.StringRelatedField(source='abstract.phone_no')
     
@@ -83,7 +83,7 @@ class BookingDateSerializer(serializers.Serializer):
 
    
 class TransactionHistorySerializer(serializers.ModelSerializer):
-    user_name = serializers.StringRelatedField(source='user.first_name')
+    user_name = serializers.StringRelatedField(source='user.customer')
     turf_name = serializers.StringRelatedField(source='turf.name')
     price = serializers.StringRelatedField(source="turf_booking.price")
     # amount_paid = serializers.StringRelatedField(source="turf_booking.amount_paid" )
@@ -94,18 +94,38 @@ class TransactionHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentHistoryModel
         fields = ['id', 'turf_booking', 'turf_name', 'user_name','price','amount_credited_to_admin','amount_credited_to_turf'] 
-
+    
+    def get_price(self, obj):
+        if obj.turf_booking:
+            return obj.turf_booking.price
+        return None
+    
     def get_amount_credited_to_admin(self, obj):
-        turf_price = obj.turf_booking.price
-        amount_credited_to_admin = turf_price * 0.20
-        return amount_credited_to_admin
-
+        turf_price = self.get_price(obj)
+        if turf_price is not None:
+            amount_credited_to_admin = turf_price * 0.20
+            return amount_credited_to_admin
+        return None
+    
     def get_amount_credited_to_turf(self, obj):
-        amount_credited_to_admin = self.get_amount_credited_to_admin(obj)
-        turf_price = obj.turf_booking.price
-        amount_paid_to_turf =obj.turf_booking.amount_paid
-        amount_credited_to_turf =  turf_price - amount_credited_to_admin
-        return amount_credited_to_turf
+        turf_price = self.get_price(obj)
+        if turf_price is not None:
+            amount_credited_to_admin = self.get_amount_credited_to_admin(obj)
+            amount_credited_to_turf = turf_price - amount_credited_to_admin
+            return amount_credited_to_turf
+        return None
+    
+    # def get_amount_credited_to_admin(self, obj):
+    #     turf_price = obj.turf_booking.price
+    #     amount_credited_to_admin = turf_price * 0.20
+    #     return amount_credited_to_admin
+
+    # def get_amount_credited_to_turf(self, obj):
+    #     amount_credited_to_admin = self.get_amount_credited_to_admin(obj)
+    #     turf_price = obj.turf_booking.price
+    #     # amount_paid_to_turf =obj.turf_booking.amount_paid
+    #     amount_credited_to_turf =  turf_price - amount_credited_to_admin
+    #     return amount_credited_to_turf
 
 
 class TurfUpdateSerializer(serializers.Serializer):

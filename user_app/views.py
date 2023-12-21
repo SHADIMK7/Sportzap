@@ -1334,3 +1334,12 @@ class RedeemRewards(generics.ListCreateAPIView):
         
         else:
             raise PermissionDenied(detail="Logged user is not a customer.")
+        
+        
+        
+class TurfBookedHistory(generics.ListAPIView):
+    serializer_class = TurfBookingSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return TurfBooking.objects.filter(turf=pk)

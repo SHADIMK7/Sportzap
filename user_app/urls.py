@@ -20,6 +20,7 @@ urlpatterns = [
     path('match_invitation/<int:pk>/', MatchAcceptInvitationView.as_view(), name='match_accept'),
     path('booking-history/', UserBookingHistoryView.as_view(), name="booking-history"),
     path('redeem-rewards/', RedeemRewards.as_view(), name='redeem-rewards'),
+    path('turf_rating/', TurfRatingView.as_view(), name='turf_rating'),
     path('turf_rating/<int:pk>/', CreateTurfRating.as_view(), name='turf_rating'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('reward-points/', RewardPoints.as_view(), name='reward-points'),

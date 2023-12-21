@@ -243,6 +243,7 @@ class BookingView(generics.ListCreateAPIView):
 
     def perform_create(self, request, serializer):
         # user = 1 
+        # print("PERFORM CREATE")
         user = self.request.user
         turf = self.kwargs['pk']
 
@@ -324,9 +325,14 @@ class BookingView(generics.ListCreateAPIView):
                 'response_code': status.HTTP_400_BAD_REQUEST,
             })
         elif Payment_type == 'Offline_payment':
+            # print("OFFLINE_PAYMENT")
             try:
-                customer = Customer.objects.get(id=user)
+                # print("USER IS ",user)
+                customer = Customer.objects.get(customer=user)
+                
+                # print("customer",customer)
             except Customer.DoesNotExist:
+                # print("CUSTOMER MISSING")
                 raise Http404("Customer does not exist")
             serializer.validated_data['turf'] = selected_turf
             serializer.validated_data['user'] = customer
@@ -1253,7 +1259,7 @@ class UserBookingHistoryView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         pk = Customer.objects.get(customer=user)
-        print("pk ",pk)
+        # print("pk ",pk)
         return UserBookingHistory.objects.filter(user=pk)
 
     

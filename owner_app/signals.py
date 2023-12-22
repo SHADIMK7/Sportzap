@@ -59,16 +59,37 @@ def add_reward_points(sender, instance, **kwargs):
         
 
         
+# @receiver(post_save, sender=TurfBooking)
+# def create_payment_history(sender, instance, created, **kwargs):
+#     # print("Payment history")
+#     if created:
+#         PaymentHistoryModel.objects.create(
+#             turf_booking=instance,
+#             turf=instance.turf,
+#             user=instance.user
+#         )
+        
+        
+        
 @receiver(post_save, sender=TurfBooking)
 def create_payment_history(sender, instance, created, **kwargs):
-    # print("Payment history")
+    # print("PAYMENT history STARTED")
     if created:
+        # print("IF CREATED:")
+        # print("INSTANCE", instance)
+        # print("turf id ", instance.turf.id)
+        # print("date", instance.date)
         PaymentHistoryModel.objects.create(
-            turf_booking=instance,
-            turf=instance.turf,
-            user=instance.user
+            turf_id = instance.turf.id,
+            turf_name = instance.turf.name,
+            user_id = instance.user.id,
+            username = instance.user.customer.username,
+            turf_price = instance.price,
+            date_booked = instance.date,
+            start_time = instance.start_time,
+            end_time = instance.end_time
         )
-        
+        # print("PAYMENT HISTORY MODEL", "turf_id : ", instance.turf,"turf_name : ",instance.turf.name,"user_id : ",instance.user.id,"username : ",instance.user.customer.username,"price : ",instance.price,"date_booked : ",instance.date,"start_time : ",instance.start_time,"end_time : ",instance.end_time)
         
 @receiver(post_save,sender = TurfBooking)
 def create_user_booking_history(sender, instance, created, **kwargs):

@@ -290,13 +290,18 @@ class BookingView(generics.ListCreateAPIView):
         turf = self.kwargs['pk']
         try:
             selected_turf = Turf.objects.get(pk=turf)
+            # print("selected turf", selected_turf.id)
         except Turf.DoesNotExist:
             raise Http404("Turf does not exist")
         serializer = self.get_serializer(data=request.data)   
         date = request.data['date']
+        # print("date: ", date)
         start_time = request.data['start_time']
+        # print("start time: ", start_time)
         end_time = request.data['end_time']
+        # print("end time: ", end_time)
         price = request.data['price']
+        # print("price: ", price)
         if self.is_time_slot_booked(turf, date, start_time, end_time):
             return Response({
                 'status': "error",
@@ -305,6 +310,7 @@ class BookingView(generics.ListCreateAPIView):
             })
         
         user = self.request.user.id
+        # print("user",user)
         
         Booking_user = Abstract.objects.filter(id=user).first()
         email = Booking_user.email
@@ -339,7 +345,7 @@ class BookingView(generics.ListCreateAPIView):
                 # print("customer",customer)
             except Customer.DoesNotExist:
                 # print("CUSTOMER MISSING")
-                raise Http404("Customer does not exist")
+                return Response({"status":"failed", "message": "CUSTOMER DOESNT exist","status_code": status.HTTP_400_BAD_REQUEST})
             serializer.validated_data['turf'] = selected_turf
             serializer.validated_data['user'] = customer
 

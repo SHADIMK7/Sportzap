@@ -52,6 +52,7 @@ class TeamInvitation(models.Model):
     user = models.ForeignKey('owner_app.Customer', on_delete=models.CASCADE)
     team = models.ForeignKey('Team', related_name='invitations', on_delete=models.CASCADE)
     player = models.ForeignKey('Player', on_delete=models.CASCADE)
+    player_user = models.IntegerField()
     is_accepted = models.BooleanField(default=False)
     
     def __str__(self):
@@ -61,7 +62,7 @@ class TeamInvitation(models.Model):
 class MatchInvitation(models.Model):
     user = models.ForeignKey('owner_app.Customer', on_delete=models.CASCADE)
     sender_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='sender')
-    receiver_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='receiver')
+    receiver_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='receiver', null=True)
     is_accepted = models.BooleanField(default=False)
     
     def __str__(self):

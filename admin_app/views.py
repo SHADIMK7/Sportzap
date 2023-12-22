@@ -242,11 +242,11 @@ class AdminIncomeView(APIView):
         end_date = request.data.get('end_date')
 
         try:
-            start_date = datetime.strptime(start_date, '%d-%m-%Y')
-            end_date = datetime.strptime(end_date, '%d-%m-%Y')
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
         except ValueError:
             return Response(
-                {"status": "error", "message": "Invalid date format. Use DD-MM-YYYY."},
+                {"status": "error", "message": "Invalid date format. Use YYYY-MM-DD."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -323,7 +323,12 @@ class TurfWeeklyIncomeView(APIView):
 
             weekly_income.extend(list(income))
 
-        return Response({"status": "success", "message": weekly_income, "response_code": status.HTTP_200_OK})
+        filtered_income = [
+            entry for entry in weekly_income 
+            if entry['turf__id'] is not None 
+        ]
+    
+        return Response({"status": "success", "message": filtered_income, "response_code": status.HTTP_200_OK})
 
 
 
@@ -349,8 +354,11 @@ class TurfMonthlyIncomeView(APIView):
 
 
         monthly_income.extend(list(income))
-
-        return Response({"status": "success", "message": monthly_income, "response_code": status.HTTP_200_OK})
+        filtered_income = [
+            entry for entry in monthly_income 
+            if entry['turf__id'] is not None 
+        ]
+        return Response({"status": "success", "message": filtered_income, "response_code": status.HTTP_200_OK})
 
 
 
@@ -608,6 +616,7 @@ class NearByTurf(APIView):
                 'image': image_url,
                 'description': turf.description,
                 'amenities': amenities,
+                'rating':turf.ai_rating,
                 'distance_km': distance(user_location, (turf.latitude, turf.longitude)).km
             })
 
@@ -662,14 +671,13 @@ import requests
 
 class DisplayWeeklyIncomeData(APIView):
     def get(self, request, turf_id):
-        ai_backend_url = 'https://115a-116-68-110-250.ngrok-free.app/inco/income'
+        ai_backend_url = 'https://cadc-116-68-110-250.ngrok-free.app/inco/income'
 
         try:
             response = requests.get(ai_backend_url)
             response.raise_for_status()
             
             income_data = response.json()
-            print(income_data)
             turf_income = None
             for income in income_data:
                 if turf_id == income.get('turf__id'):
@@ -685,7 +693,7 @@ class DisplayWeeklyIncomeData(APIView):
 
 class DisplayWeeklyBookingData(APIView):
     def get(self, request, turf_id):
-        ai_backend_url = 'https://115a-116-68-110-250.ngrok-free.app/book/booking'
+        ai_backend_url = 'https://cadc-116-68-110-250.ngrok-free.app/book/booking'
 
         try:
             response = requests.get(ai_backend_url)
@@ -834,7 +842,7 @@ class User_Player_Search(APIView):
 
 class playersLeaderBoard(APIView):
     def get(self, request):
-        ai_backend_url = 'https://115a-116-68-110-250.ngrok-free.app/prob/playerdata'
+        ai_backend_url = 'https://cadc-116-68-110-250.ngrok-free.app/prob/playerdata'
 
         try:
 
@@ -887,7 +895,7 @@ class CustomerBookingCount(APIView):
 
 class NotificationToOwner(APIView):
     def get(self, request, owner__id):
-        ai_backend_url = 'https://1a23-116-68-110-250.ngrok-free.app/anom/send_notifications'
+        ai_backend_url = 'https://9951-116-68-110-250.ngrok-free.app/anom/send_notifications'
 
         try:
             response = requests.get(ai_backend_url)
@@ -905,9 +913,12 @@ class NotificationToOwner(APIView):
                         "turf_name":turfname,
                         "message": message
                     }
-               
-                    return Response({"status": "success", "message": owner_notification,"response_code": status.HTTP_200_OK})
-                
+                    break
+                    # return Response({"status": "success", "message": owner_notification,"response_code": status.HTTP_200_OK})
+            if owner_notification:
+                return Response({"status": "success", "message": owner_notification, "response_code": status.HTTP_200_OK})
+            else:
+                return Response({"status": "success", "message": None, "response_code": status.HTTP_200_OK})    
 
         except requests.RequestException:
             return Response({"status": "failure", "message": "Request failed: "})            

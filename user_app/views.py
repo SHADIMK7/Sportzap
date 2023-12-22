@@ -185,7 +185,8 @@ class BookingView(generics.ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)   
         date = request.data['date']
         # print("date: ", date)
-        start_time_str = request.data['start_time']
+        start_time_str = request.data['start_time'].strip()
+        # print("start_time_str:", repr(start_time_str))
         start_time = datetime.strptime(start_time_str, '%H:%M:%S').time()
         # print("start time: ", start_time)
         # print("start time strp", start_time_str)

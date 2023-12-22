@@ -187,11 +187,11 @@ class BookingView(generics.ListCreateAPIView):
         # print("date: ", date)
         start_time_str = request.data['start_time']
         start_time = datetime.strptime(start_time_str, '%H:%M:%S').time()
-        print("start time: ", start_time)
-        print("start time strp", start_time_str)
+        # print("start time: ", start_time)
+        # print("start time strp", start_time_str)
         end_time_str = request.data['end_time']
         end_time = datetime.strptime(end_time_str, '%H:%M:%S').time()
-        print("end time: ", end_time)
+        # print("end time: ", end_time)
         price = request.data['price']
         # print("price: ", price)
         if self.is_time_slot_booked(turf, date, start_time, end_time):

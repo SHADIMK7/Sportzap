@@ -99,6 +99,20 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='PaymentHistoryModel',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('turf_id', models.IntegerField(null=True)),
+                ('turf_name', models.CharField(max_length=50)),
+                ('user_id', models.IntegerField(null=True)),
+                ('username', models.CharField(max_length=50)),
+                ('turf_price', models.FloatField(null=True)),
+                ('date_booked', models.DateField(null=True)),
+                ('start_time', models.TimeField(null=True)),
+                ('end_time', models.TimeField(null=True)),
+            ],
+        ),
+        migrations.CreateModel(
             name='Turf',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -174,15 +188,6 @@ class Migration(migrations.Migration):
                 ('profile_name', models.CharField(max_length=55, null=True)),
                 ('profile_pic', models.ImageField(null=True, upload_to='profile_image/')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='PaymentHistoryModel',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('turf', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='owner_app.turf')),
-                ('turf_booking', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='owner_app.turfbooking')),
-                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='owner_app.customer')),
             ],
         ),
     ]

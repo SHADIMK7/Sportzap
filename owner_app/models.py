@@ -122,12 +122,21 @@ class TurfBooking(models.Model):
 
 
 class PaymentHistoryModel(models.Model):
-    turf_booking = models.ForeignKey(TurfBooking, on_delete=models.SET_NULL, null=True)
-    turf = models.ForeignKey(Turf, on_delete=models.SET_NULL, null=True)
-    user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
+    # turf_booking = models.ForeignKey(TurfBooking, on_delete=models.SET_NULL, null=True)
+    # turf_name = models.CharField(max_length=55)
+    # turf_price = models.FloatField()
+    # user = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True)
+    turf_id = models.IntegerField(null=True)
+    turf_name = models.CharField(max_length=50)
+    user_id = models.IntegerField(null=True)
+    username = models.CharField(max_length=50)
+    turf_price = models.FloatField(null = True)
+    date_booked = models.DateField(null = True)
+    start_time = models.TimeField(null = True)
+    end_time = models.TimeField(null = True)
 
     def __str__(self):
-        return f'{self.user} has booked {self.turf}'
+        return f'{self.username} has booked {self.turf_name}'
         
 
 

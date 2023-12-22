@@ -71,7 +71,7 @@ class CustomLoginView(ObtainAuthToken):
         
 
 class ResetPass(APIView):
-    serializer_class = ResetPasswordSerializer  # Define your serializer class
+    serializer_class = ResetPasswordSerializer 
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)

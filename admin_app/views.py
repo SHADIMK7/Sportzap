@@ -242,11 +242,11 @@ class AdminIncomeView(APIView):
         end_date = request.data.get('end_date')
 
         try:
-            start_date = datetime.strptime(start_date, '%d-%m-%Y')
-            end_date = datetime.strptime(end_date, '%d-%m-%Y')
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
         except ValueError:
             return Response(
-                {"status": "error", "message": "Invalid date format. Use DD-MM-YYYY."},
+                {"status": "error", "message": "Invalid date format. Use YYYY-MM-DD."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -323,7 +323,12 @@ class TurfWeeklyIncomeView(APIView):
 
             weekly_income.extend(list(income))
 
-        return Response({"status": "success", "message": weekly_income, "response_code": status.HTTP_200_OK})
+        filtered_income = [
+            entry for entry in weekly_income 
+            if entry['turf__id'] is not None 
+        ]
+    
+        return Response({"status": "success", "message": filtered_income, "response_code": status.HTTP_200_OK})
 
 
 
@@ -349,8 +354,11 @@ class TurfMonthlyIncomeView(APIView):
 
 
         monthly_income.extend(list(income))
-
-        return Response({"status": "success", "message": monthly_income, "response_code": status.HTTP_200_OK})
+        filtered_income = [
+            entry for entry in monthly_income 
+            if entry['turf__id'] is not None 
+        ]
+        return Response({"status": "success", "message": filtered_income, "response_code": status.HTTP_200_OK})
 
 
 
@@ -608,6 +616,7 @@ class NearByTurf(APIView):
                 'image': image_url,
                 'description': turf.description,
                 'amenities': amenities,
+                'rating':turf.ai_rating,
                 'distance_km': distance(user_location, (turf.latitude, turf.longitude)).km
             })
 
@@ -615,6 +624,7 @@ class NearByTurf(APIView):
            return Response({"status": "success", "response_code": status.HTTP_200_OK, "message": sorted_turfs})
         except (ValueError, TypeError):
             return Response({"status": "error", "response_code": status.HTTP_400_BAD_REQUEST, "message": "Invalid latitude or longitude"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class MatchRatingView(APIView):
     def get(self, request):
@@ -638,21 +648,23 @@ class MatchRatingView(APIView):
                     team2_result = "win"
                 team1_players = players_data.get('team1_player', [])
                 team2_players = players_data.get('team2_player', [])
-               
+
+                # if team1_id is not None and match_id is not None:             
                 response_data.append({
                     'match_id':match_id,
                     'team_id' : team1_id ,
                     'result': team1_result,
                     'date': date_played,
                     'players':team1_players
-                })
+                   })
+                # if team1_id is not None and match_id is not None:             
                 response_data.append({
                     'match_id':match_id,
                     'team_id' : team2_id ,
                     'result': team2_result,
                     'date': date_played,
                     'players':team2_players
-                })
+                 })
                 
         return Response({"status": "success", "response_code": status.HTTP_200_OK, "message": response_data})
 
@@ -662,19 +674,21 @@ import requests
 
 class DisplayWeeklyIncomeData(APIView):
     def get(self, request, turf_id):
-        ai_backend_url = 'https://ff95-116-68-110-250.ngrok-free.app/income'
+        ai_backend_url = 'https://cadc-116-68-110-250.ngrok-free.app/inco/income'
 
         try:
             response = requests.get(ai_backend_url)
             response.raise_for_status()
             
             income_data = response.json()
+            turf_income = None
             for income in income_data:
                 if turf_id == income.get('turf__id'):
                     turf_income = income
-
+                    break
+                      
             return Response({"status": "success", "message": turf_income,"response_code": status.HTTP_200_OK})
-        
+            
         except requests.RequestException:
             return Response({"status": "failure", "message": "Request failed: "})            
 
@@ -682,17 +696,18 @@ class DisplayWeeklyIncomeData(APIView):
 
 class DisplayWeeklyBookingData(APIView):
     def get(self, request, turf_id):
-        ai_backend_url = 'https://ff95-116-68-110-250.ngrok-free.app/booking'
+        ai_backend_url = 'https://cadc-116-68-110-250.ngrok-free.app/book/booking'
 
         try:
             response = requests.get(ai_backend_url)
             response.raise_for_status()
             
             booking_data = response.json()
-            # print(booking_data)
+            turf_booking = None
             for booking in booking_data:
-                if turf_id == booking.get('turf_id'):
+                if turf_id == booking.get('turf__id'):
                     turf_booking = booking
+                    
             return Response({"status": "success", "message": turf_booking,"response_code": status.HTTP_200_OK})
         
         except requests.RequestException:
@@ -830,7 +845,7 @@ class User_Player_Search(APIView):
 
 class playersLeaderBoard(APIView):
     def get(self, request):
-        ai_backend_url = 'https://ff95-116-68-110-250.ngrok-free.app/playerdata'
+        ai_backend_url = 'https://cadc-116-68-110-250.ngrok-free.app/prob/playerdata'
 
         try:
 
@@ -850,6 +865,7 @@ class playersLeaderBoard(APIView):
                 if players.filter(id=player_id).exists():
                     player_info['image'] = request.build_absolute_uri(player.player_pic.url)
                     player_info['name'] = player.player_name
+                    player_info['skill']=player.player_skill
                     matching_players.append(player_info)
             matching_players.sort(key=lambda x: x['win_ratio'], reverse=True)
 
@@ -880,7 +896,38 @@ class CustomerBookingCount(APIView):
     
 
 
+class NotificationToOwner(APIView):
+    def get(self, request, owner__id):
+        ai_backend_url = 'https://9951-116-68-110-250.ngrok-free.app/anom/send_notifications'
+
+        try:
+            response = requests.get(ai_backend_url)
+            response.raise_for_status()
+            
+            notifications = response.json()
+            for msg in notifications:
+                turfname = msg.get('turf_name')
+                owner_id = msg.get('owner_id')
+                message = msg.get('message')
+                owner_notification = None
+                if owner__id == owner_id: 
+                    owner_notification = {
+                        "owner_id" : owner_id,
+                        "turf_name":turfname,
+                        "message": message
+                    }
+                    break
+                    # return Response({"status": "success", "message": owner_notification,"response_code": status.HTTP_200_OK})
+            if owner_notification:
+                return Response({"status": "success", "message": owner_notification, "response_code": status.HTTP_200_OK})
+            else:
+                return Response({"status": "success", "message": None, "response_code": status.HTTP_200_OK})    
+
+        except requests.RequestException:
+            return Response({"status": "failure", "message": "Request failed: "})            
+
    
+
 
 # from geopy.geocoders import Nominatim
 

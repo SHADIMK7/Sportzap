@@ -36,6 +36,7 @@ urlpatterns = [
         path('user_player_search/',User_Player_Search.as_view(),name='user_player_search'),
         path('player_leaderboard/',playersLeaderBoard.as_view(),name='player_leaderboard'),
         path('customer_booking_count/',CustomerBookingCount.as_view(), name='customer_booking_count'),
+        path('notification_to_owner/<int:owner__id>/', NotificationToOwner.as_view(), name='notification_to_owner'),
 
 
 

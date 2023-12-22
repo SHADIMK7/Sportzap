@@ -790,7 +790,6 @@ class TeamInvitationView(generics.CreateAPIView):
             player = Player.objects.filter(pk=player_id).first()
             
             player_user = player.player_user_id
-            print(player_user)
 
             if team is None or player is None:
                 return Response({'status': "error",
@@ -873,6 +872,15 @@ class MatchInvitationView(generics.CreateAPIView):
         # data=request.data
         # data['sender_team']
         user = self.request.user
+        description = self.request.data.get('description')
+        if not description:
+            return Response({
+                'status': "error",
+                'message': "Description is required",
+                'response_code': status.HTTP_400_BAD_REQUEST,
+                'data': ''
+            })
+        # description = "HAi"
         customer = Customer.objects.filter(customer_id = user.id).first()
         if not customer:
             return Response({'status': "error",
@@ -883,39 +891,45 @@ class MatchInvitationView(generics.CreateAPIView):
         user_team = Team.objects.filter(team_user = customer).first()
         team1_id = user_team.id
         # team1_id = request.data.get('sender_team')
-        team2_id = request.data.get('receiver_team')
+        # team2_id = request.data.get('receiver_team')
+        all_teams = Team.objects.exclude(pk=team1_id)
+        print(all_teams)
         
-        try:
-            team1 = Team.objects.filter(pk = team1_id).first()
-            if team1 is None:
-                return Response({
-                    'status': "error",
-                    'message': "Invalid team1, Maybe team1 has no sufficient players",
-                    'response_code': status.HTTP_400_BAD_REQUEST,
-                    'data': ''
-                })
-            team2 = Team.objects.filter(pk = team2_id).first()
-            if team2 is None:
-                return Response({
-                    'status': "error",
-                    'message': "Invalid team2, , Maybe team2 has no sufficient players",
-                    'response_code': status.HTTP_400_BAD_REQUEST,
-                    'data': ''
-                })
-        
-            team1_players = team1.players.all()
-            team2_players = team2.players.all()
+        for team_2 in all_teams:
+            try:
+                team1 = Team.objects.filter(pk = team1_id).first()
+                if team1 is None:
+                    return Response({
+                        'status': "error",
+                        'message': "Invalid team1, Maybe team1 has no sufficient players",
+                        'response_code': status.HTTP_400_BAD_REQUEST,
+                        'data': ''
+                    })
+                    
+                team2_id = team_2.id
+                team2 = Team.objects.filter(pk = team2_id).first()
+                new_team_user = team2.team_user_id
+                if team2 is None:
+                    return Response({
+                        'status': "error",
+                        'message': "Invalid team2, , Maybe team2 has no sufficient players",
+                        'response_code': status.HTTP_400_BAD_REQUEST,
+                        'data': ''
+                    })
             
-            team1_user = team1.team_user.id
-            team2_user = team2.team_user.id
+                team1_players = team1.players.all()
+                team2_players = team2.players.all()
                 
-            common_player = set(team1_players.values_list('id', flat=True)).intersection(team2_players.values_list('id', flat=True))
+                team1_user = team1.team_user.id
+                team2_user = team2.team_user.id
+                    
+                common_player = set(team1_players.values_list('id', flat=True)).intersection(team2_players.values_list('id', flat=True))
 
-        except(Team.DoesNotExist):
-            return Response({'status': "error",
-                            'message': "Invalid team",
-                            'response_code': status.HTTP_400_BAD_REQUEST,
-                            'data': ''})
+            except(Team.DoesNotExist):
+                return Response({'status': "error",
+                                'message': "Invalid team",
+                                'response_code': status.HTTP_400_BAD_REQUEST,
+                                'data': ''})
             
         if team1_user == team2_user:
             return Response({'status': "error",
@@ -939,7 +953,9 @@ class MatchInvitationView(generics.CreateAPIView):
             
             team_invitation = MatchInvitation.objects.create(sender_team = team1,
                                                              receiver_team = team2,
-                                                             user = customer)
+                                                             user = customer,
+                                                             team_user = new_team_user,
+                                                             description = description)
             return Response({'status': "success",
                             'message': "invitation successfully",
                             "invitation_id": team_invitation.id,
@@ -950,6 +966,15 @@ class MatchInvitationView(generics.CreateAPIView):
                             'message': "team strength is not same, invitation unsuccessfully",
                             'response_code': status.HTTP_400_BAD_REQUEST,
                             'data': ''})
+            
+class ReceivedMatchInvitations(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = MatchInvitation.objects.all()
+    serializer_class = MatchInvitationSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return MatchInvitation.objects.filter(team_user=pk, is_accepted=False)
     
 class MatchAcceptInvitationView(generics.UpdateAPIView):
     queryset = MatchInvitation.objects.all()

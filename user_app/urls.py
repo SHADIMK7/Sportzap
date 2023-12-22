@@ -15,6 +15,7 @@ urlpatterns = [
     path('gallery/', GalleryView.as_view(), name='gallery'),
     path('profile/', ProfileUpdateView.as_view(), name='profile'),
     path('player_invitation/', TeamInvitationView.as_view(), name='send_invitation'),
+    path('player_get_invitation/<int:pk>/', ReceivedInvitations.as_view(), name='received_invitation'),
     path('player_invitation/<int:pk>/', AcceptInvitationView.as_view(), name='accept_invitation'),
     path('match_invitation/', MatchInvitationView.as_view(), name="match_invitation"),
     path('match_invitation/<int:pk>/', MatchAcceptInvitationView.as_view(), name='match_accept'),

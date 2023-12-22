@@ -203,7 +203,7 @@ class BookingView(generics.ListCreateAPIView):
         
         Booking_user = Abstract.objects.filter(id=user).first()
         email = Booking_user.email
-        print("email",email)
+        # print("email",email)
         serializer.is_valid(raise_exception=True)
 
         Payment_type = serializer.validated_data.get('Payment_type', 'Full_payment')
@@ -293,94 +293,7 @@ class BookingView(generics.ListCreateAPIView):
             return if_bookings
         except Turf.DoesNotExist:
             raise Http404("Turf does not exist")
-#-----------------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------------
-# class TurfBookingAIView(APIView):
-#     def post(self, request, *args, **kwargs):
-#         serializer = TurfBookingAISerializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
 
-#         user = serializer.validated_data.get('user')
-#         user_id = user.id
-#         print("user id is", user_id)
-#         if user_id is None:
-#             return Response({'error': 'User ID not provided in the request data'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         date_obj = serializer.validated_data.get('date')
-#         start_time_obj = serializer.validated_data.get('start_time')
-#         end_time_obj = serializer.validated_data.get('end_time')
-#         price = serializer.validated_data.get('price')
-#         turf = serializer.validated_data.get('turf')
-#         turf_id = turf.id
-
-#         formatted_date = date_obj.strftime('%Y-%m-%d')
-#         formatted_start_time = start_time_obj.strftime('%H:%M:%S')
-#         formatted_end_time = end_time_obj.strftime('%H:%M:%S')
-
-#         ai_endpoint = 'https://5673-116-68-110-250.ngrok-free.app/dynamic_discount'
-#         print("ai is price is ", price)
-#         three_months = datetime.now() - timedelta(days=90)
-
-#         booking_count = TurfBooking.objects.filter(user=user_id, date__gte=three_months).count()
-#         print("BOOKING COUNT IN LAST 3 MONTHS IS ", booking_count)
-#         ai_data = {
-#             'user': user_id,
-#             'date': formatted_date,
-#             'start_time': formatted_start_time,
-#             'end_time': formatted_end_time,
-#             'price': price,
-#             'turf': turf_id,
-#             'booking_count':booking_count
-#         }
-
-#         # Initialize ai_response here
-#         ai_response = None
-
-#         try:
-#             # Make a POST request to the AI service
-#             ai_response = requests.post(ai_endpoint, json=ai_data)
-#             ai_response.raise_for_status()  # Raise an exception for bad responses
-
-#             # Check if 'dpiscount_price' key is present in the JSON response
-#             if 'discount_price' in ai_response.json():
-#                 # Get the modified price from the AI service response
-#                 modified_price = ai_response.json()['discount_price']
-#                 print("modified price is ", modified_price)
-
-#                 # Create a new AiTurfBookModel instance with the modified price
-#                 AiTurfBookModel.objects.create(
-#                     user=user,
-#                     date=date_obj,
-#                     start_time=start_time_obj,
-#                     end_time=end_time_obj,
-#                     price=modified_price,
-#                     turf=turf
-#                 )
-
-#                 # Return the modified price to the frontend
-#                 return Response({'modified_price': modified_price, 'date': date_obj, 'start_time': start_time_obj,
-#                                  'end_time': end_time_obj, 'turf': turf.id, 'user': user.id},
-#                                 status=status.HTTP_200_OK)
-#             else:
-#                 # Print the entire response content for debugging
-#                 print(f"Unexpected response format. Response content: {ai_response.content}")
-
-#                 # Handle the case where 'discount_price' key is not present
-#                 return Response({'error': 'Invalid response format'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-#         except requests.RequestException as e:
-#             # Log the error and print the response content
-#             print(f"Error: {str(e)}")
-#             print(f"Response content: {ai_response.content if ai_response else 'No response'}")
-
-#             # Return a more informative response
-#             return Response({'error': 'Error making request to AI service'},
-#                             status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
-
-
-
-#-------------------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------------------
     
 # class TurfDisplayView(generics.ListAPIView):
 #     queryset = Turf.objects.all()
@@ -401,11 +314,19 @@ class BookingView(generics.ListCreateAPIView):
     
     
     
-class TeamView(generics.CreateAPIView):
+class TeamView(generics.ListCreateAPIView):
     authentication_classes = [TokenAuthentication]
     # permission_classes = [IsUserOnly]
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
+    
+    def get(self, request, *args, **kwargs):
+        teams = Team.objects.all()
+        serializer = TeamSerializer(teams, many=True)
+        return Response({'status': "success",
+                         'message': "Team list retrieved successfully",
+                         'response_code': status.HTTP_200_OK,
+                         'data': serializer.data})
     
     def post(self, request):
         user = self.request.user
@@ -456,21 +377,42 @@ class TeamDetailView(generics.RetrieveUpdateDestroyAPIView):
     
     def get(self, request, pk):
         # self.queryset = self.queryset.filter(id = pk).first()
+        user = self.request.user
+        customer = Customer.objects.filter(customer_id = user.id).first()
+        if not customer:
+            return Response({'status': "error",
+                                'message': "Not a customer",
+                                'response_code': status.HTTP_404_NOT_FOUND,
+                                'data': ''})
+        u_team = Team.objects.filter(team_user_id = customer).first()
+        if not u_team:
+            return Response({'status': "error",
+                                'message': "Invalid team_id",
+                                'response_code': status.HTTP_404_NOT_FOUND,
+                                'data': ''})
+        user_t = u_team.id
         self.queryset = self.get_object()
         team_id = self.queryset.id
-        if self.queryset:
-            serializer = self.get_serializer(self.queryset)
-            return Response({'status': "success",
-                            'message': "Team fetching Successful",
-                            'team_id': team_id,
-                            'response_code': status.HTTP_200_OK,
-                            'data': serializer.data})
+        has_team = user_t == team_id
+        if has_team:
+            if self.queryset:
+                serializer = self.get_serializer(self.queryset)
+                return Response({'status': "success",
+                                'message': "Team fetching Successful",
+                                'team_id': team_id,
+                                'response_code': status.HTTP_200_OK,
+                                'data': serializer.data})
+            else:
+                data = serializer.errors
+                return Response({'status': "error",
+                                'message': "Team fetching unsuccessful",
+                                'response_code': status.HTTP_404_NOT_FOUND,
+                                'data': data})
         else:
-            data = serializer.errors
             return Response({'status': "error",
-                            'message': "Team fetching unsuccessful",
+                            'message': "This is not your Team",
                             'response_code': status.HTTP_404_NOT_FOUND,
-                            'data': data})
+                            'data': ''})
         
     def put(self, request, pk):
         self.check_object_permissions(request, self.get_object())
@@ -548,7 +490,6 @@ class PlayerView(generics.ListCreateAPIView):
                 serializer.validated_data['player_pic'] = processed_image_content
                 
             team_id = self.request.data.get('team')
-            print(user)
 
             if team_id:
                 team_strength_query = Team.objects.filter(id=team_id).first()
@@ -565,7 +506,10 @@ class PlayerView(generics.ListCreateAPIView):
                         }
                         raise serializers.ValidationError(response_data)
                     else:
-                        serializer.save()
+                        serializer.save(player_user = customer)
+                        player_instance = serializer.instance
+                        player_instance.teams.add(team)
+                        
                         response_data = {
                             'status': "success",
                             'message': 'Player added successfully',
@@ -586,11 +530,14 @@ class PlayerView(generics.ListCreateAPIView):
                 team = Team.objects.filter(team_user_id = customer).first()
                 if team:
                     teams = team.id
-                    print(serializer)
+                    print(teams)
                     serializer.save(player_user = customer)
+                    player_instance = serializer.instance
+                    player_instance.teams.add(team)
+                    
                     response_data = {
                         'status': "success",
-                        'message': f"{'Saved to team selected'}",
+                        'message': f"{'Saved to selected team'}",
                         'team_id': teams,
                         'response_code': status.HTTP_200_OK,
                         'data': serializer.data,
@@ -646,8 +593,6 @@ class PlayerDetail(generics.RetrieveUpdateDestroyAPIView):
     
     def get(self, request, pk):
         self.queryset = self.queryset.filter(id = pk).first()
-        s = self.queryset
-        print(s)
         player_id = self.queryset.id
         if self.queryset:
             serializer = self.get_serializer(self.queryset)
@@ -839,6 +784,9 @@ class TeamInvitationView(generics.CreateAPIView):
         try:
             team = Team.objects.filter(pk=team_id).first()
             player = Player.objects.filter(pk=player_id).first()
+            
+            player_user = player.player_user_id
+            print(player_user)
 
             if team is None or player is None:
                 return Response({'status': "error",
@@ -858,7 +806,10 @@ class TeamInvitationView(generics.CreateAPIView):
                                 'response_code': status.HTTP_400_BAD_REQUEST,
                                 'data': '{}'})
 
-            invitation = TeamInvitation.objects.create(team=team, player=player, user=customer)
+            invitation = TeamInvitation.objects.create(team=team,
+                                                       player=player,
+                                                       user=customer,
+                                                       player_user = player_user)
             if invitation:
                 return Response({'status': "success",
                                 'message': "Invitation successfully created",
@@ -877,6 +828,16 @@ class TeamInvitationView(generics.CreateAPIView):
                             'message': "Invalid team or player ID",
                             'response_code': status.HTTP_400_BAD_REQUEST,
                             'data': '{}'})
+
+class ReceivedInvitations(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = TeamInvitation.objects.all()
+    serializer_class = TeamInvitationSerializer
+    
+    def get_queryset(self):
+        pk = self.kwargs['pk']
+        return TeamInvitation.objects.filter(player_user=pk)
+        
 
 class AcceptInvitationView(generics.UpdateAPIView):
     queryset = TeamInvitation.objects.all()
@@ -907,13 +868,37 @@ class MatchInvitationView(generics.CreateAPIView):
         
         # data=request.data
         # data['sender_team']
-        
-        team1_id = request.data.get('sender_team')
+        user = self.request.user
+        customer = Customer.objects.filter(customer_id = user.id).first()
+        if not customer:
+            return Response({'status': "error",
+                            'message': "Invalid Customer",
+                            'response_code': status.HTTP_400_BAD_REQUEST,
+                            'data': ''})
+            
+        user_team = Team.objects.filter(team_user = customer).first()
+        team1_id = user_team.id
+        # team1_id = request.data.get('sender_team')
         team2_id = request.data.get('receiver_team')
         
         try:
             team1 = Team.objects.filter(pk = team1_id).first()
+            if team1 is None:
+                return Response({
+                    'status': "error",
+                    'message': "Invalid team1, Maybe team1 has no sufficient players",
+                    'response_code': status.HTTP_400_BAD_REQUEST,
+                    'data': ''
+                })
             team2 = Team.objects.filter(pk = team2_id).first()
+            if team2 is None:
+                return Response({
+                    'status': "error",
+                    'message': "Invalid team2, , Maybe team2 has no sufficient players",
+                    'response_code': status.HTTP_400_BAD_REQUEST,
+                    'data': ''
+                })
+        
             team1_players = team1.players.all()
             team2_players = team2.players.all()
             
@@ -948,7 +933,9 @@ class MatchInvitationView(generics.CreateAPIView):
         
         if team1.team_strength == team2.team_strength:
             
-            team_invitation = MatchInvitation.objects.create(sender_team = team1, receiver_team = team2)
+            team_invitation = MatchInvitation.objects.create(sender_team = team1,
+                                                             receiver_team = team2,
+                                                             user = customer)
             return Response({'status': "success",
                             'message': "invitation successfully",
                             "invitation_id": team_invitation.id,
@@ -957,7 +944,6 @@ class MatchInvitationView(generics.CreateAPIView):
         else:
             return Response({'status': "error",
                             'message': "team strength is not same, invitation unsuccessfully",
-
                             'response_code': status.HTTP_400_BAD_REQUEST,
                             'data': ''})
     

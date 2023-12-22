@@ -63,6 +63,8 @@ class MatchInvitation(models.Model):
     user = models.ForeignKey('owner_app.Customer', on_delete=models.CASCADE)
     sender_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='sender')
     receiver_team = models.ForeignKey('Team', on_delete=models.CASCADE, related_name='receiver', null=True)
+    team_user = models.IntegerField()
+    description = models.CharField(max_length = 255)
     is_accepted = models.BooleanField(default=False)
     
     def __str__(self):

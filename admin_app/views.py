@@ -625,6 +625,7 @@ class NearByTurf(APIView):
         except (ValueError, TypeError):
             return Response({"status": "error", "response_code": status.HTTP_400_BAD_REQUEST, "message": "Invalid latitude or longitude"}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class MatchRatingView(APIView):
     def get(self, request):
         match_ratings = MatchRatingModel.objects.values('id', 'team1_id','team2_id','team1_score','team2_score','date_played','players_data')
@@ -647,21 +648,23 @@ class MatchRatingView(APIView):
                     team2_result = "win"
                 team1_players = players_data.get('team1_player', [])
                 team2_players = players_data.get('team2_player', [])
-               
+
+                # if team1_id is not None and match_id is not None:             
                 response_data.append({
                     'match_id':match_id,
                     'team_id' : team1_id ,
                     'result': team1_result,
                     'date': date_played,
                     'players':team1_players
-                })
+                   })
+                # if team1_id is not None and match_id is not None:             
                 response_data.append({
                     'match_id':match_id,
                     'team_id' : team2_id ,
                     'result': team2_result,
                     'date': date_played,
                     'players':team2_players
-                })
+                 })
                 
         return Response({"status": "success", "response_code": status.HTTP_200_OK, "message": response_data})
 

@@ -18,7 +18,7 @@ class AbstractUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Abstract
-        fields = ['first_name','last_name','email','phone_no']
+        fields = ['username','email','phone_no']
 
 
 class OwnerSerializer(serializers.ModelSerializer):

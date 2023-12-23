@@ -214,9 +214,9 @@ class BookingView(generics.ListCreateAPIView):
         # print("user",user)
         
         Booking_user = Abstract.objects.filter(id=user).first()
-        print("Booking user",Booking_user)
+        # print("Booking user",Booking_user)
         email = Booking_user.email
-        print("email",email)
+        # print("email",email)
         serializer.is_valid(raise_exception=True)
 
         Payment_type = serializer.validated_data.get('Payment_type', 'Full_payment')

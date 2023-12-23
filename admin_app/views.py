@@ -367,7 +367,7 @@ class TeamLeaderBoard(generics.ListAPIView):
     serializer_class = LeaderBoardSerializer
 
     def get_queryset(self):
-        queryset = Leaderboard.objects.order_by('-win_ratio','-aggregate_score_ratio')
+        queryset = Leaderboard.objects.filter(win_ratio__gt=0).order_by('-win_ratio','-aggregate_score_ratio')[:4]
         return queryset
 
     def list(self, request):
@@ -863,13 +863,15 @@ class playersLeaderBoard(APIView):
                 player = players.filter(id=player_id).first()
 
                 if players.filter(id=player_id).exists():
-                    player_info['image'] = request.build_absolute_uri(player.player_pic.url)
-                    player_info['name'] = player.player_name
-                    player_info['skill']=player.player_skill
-                    matching_players.append(player_info)
-            matching_players.sort(key=lambda x: x['win_ratio'], reverse=True)
+                    if player and player_info['Win_Count'] > 0:
 
-            return Response({"status": "success", "message": matching_players,"response_code": status.HTTP_200_OK})
+                        player_info['image'] = request.build_absolute_uri(player.player_pic.url)
+                        player_info['name'] = player.player_name
+                        player_info['skill']=player.player_skill
+                        matching_players.append(player_info)
+            matching_players.sort(key=lambda x: x['win_ratio'], reverse=True)
+            top_four_players = matching_players[:4]
+            return Response({"status": "success", "message": top_four_players,"response_code": status.HTTP_200_OK})
         
         except requests.RequestException:
             return Response({"status": "failure", "message": "Request failed: "})            
@@ -905,11 +907,13 @@ class NotificationToOwner(APIView):
             response.raise_for_status()
             
             notifications = response.json()
+            owner_notification = None
+
             for msg in notifications:
                 turfname = msg.get('turf_name')
                 owner_id = msg.get('owner_id')
                 message = msg.get('message')
-                owner_notification = None
+                # owner_notification = None
                 if owner__id == owner_id: 
                     owner_notification = {
                         "owner_id" : owner_id,

@@ -179,31 +179,30 @@ class BookingView(generics.ListCreateAPIView):
         turf = self.kwargs['pk']
         try:
             selected_turf = Turf.objects.get(pk=turf)
-            # print("selected turf", selected_turf.id)
         except Turf.DoesNotExist:
             raise Http404("Turf does not exist")
-        serializer = self.get_serializer(data=request.data)   
+        
+        serializer = self.get_serializer(data=request.data)
+
         date = request.data['date']
-        # print("date: ", date)
+        start_time_str = request.data['start_time'].strip()
+        end_time_str = request.data['end_time'].strip()
+
         try:
-            start_time_str = request.data['start_time'].strip()
-        # print("start_time_str:", repr(start_time_str))
             start_time = datetime.strptime(start_time_str, '%H:%M:%S').time()
-        # print("start time: ", start_time)
-        # print("start time strp", start_time_str)
-            end_time_str = request.data['end_time'].strip()
+            print("start_time",start_time)
             end_time = datetime.strptime(end_time_str, '%H:%M:%S').time()
-            # print("end time: ", end_time)
-        except ValueError:
+            print("end_time",end_time)
+            
+        except ValueError as e:
             return Response({
                 'status': "error",
-                'message': "Invalid time format. Use HH:MM:SS.",
+                'message': f"Invalid time format. Error: {e}",
                 'response_code': status.HTTP_400_BAD_REQUEST,
             })
-            
-        # print("end time: ", end_time)
+
         price = request.data['price']
-        # print("price: ", price)
+
         if self.is_time_slot_booked(turf, date, start_time, end_time):
             return Response({
                 'status': "error",

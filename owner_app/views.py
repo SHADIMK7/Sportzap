@@ -244,7 +244,7 @@ class PaymentHistory(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated and user.usertype == "owner":
-            return PaymentHistoryModel.objects.filter(turf__owner__abstract__username=user.username)
+            return PaymentHistoryModel.objects.filter(username=user.username)
         else:
             return PaymentHistoryModel.objects.none()
         

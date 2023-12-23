@@ -193,6 +193,7 @@ class BookingView(generics.ListCreateAPIView):
         # print("start time strp", start_time_str)
             end_time_str = request.data['end_time'].strip()
             end_time = datetime.strptime(end_time_str, '%H:%M:%S').time()
+            # print("end time: ", end_time)
         except ValueError:
             return Response({
                 'status': "error",

@@ -179,21 +179,30 @@ class BookingView(generics.ListCreateAPIView):
         turf = self.kwargs['pk']
         try:
             selected_turf = Turf.objects.get(pk=turf)
-            # print("selected turf", selected_turf.id)
         except Turf.DoesNotExist:
             raise Http404("Turf does not exist")
-        serializer = self.get_serializer(data=request.data)   
+        
+        serializer = self.get_serializer(data=request.data)
+
         date = request.data['date']
-        # print("date: ", date)
-        start_time_str = request.data['start_time']
-        start_time = datetime.strptime(start_time_str, '%H:%M:%S').time()
-        # print("start time: ", start_time)
-        # print("start time strp", start_time_str)
-        end_time_str = request.data['end_time']
-        end_time = datetime.strptime(end_time_str, '%H:%M:%S').time()
-        # print("end time: ", end_time)
+        start_time_str = request.data['start_time'].strip()
+        end_time_str = request.data['end_time'].strip()
+
+        try:
+            start_time = datetime.strptime(start_time_str, '%H:%M:%S').time()
+            # print("start_time",start_time)
+            end_time = datetime.strptime(end_time_str, '%H:%M:%S').time()
+            # print("end_time",end_time)
+            
+        except ValueError as e:
+            return Response({
+                'status': "error",
+                'message': f"Invalid time format. Error: {e}",
+                'response_code': status.HTTP_400_BAD_REQUEST,
+            })
+
         price = request.data['price']
-        # print("price: ", price)
+
         if self.is_time_slot_booked(turf, date, start_time, end_time):
             return Response({
                 'status': "error",
@@ -205,6 +214,7 @@ class BookingView(generics.ListCreateAPIView):
         # print("user",user)
         
         Booking_user = Abstract.objects.filter(id=user).first()
+        # print("Booking user",Booking_user)
         email = Booking_user.email
         # print("email",email)
         serializer.is_valid(raise_exception=True)

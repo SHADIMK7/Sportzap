@@ -190,9 +190,9 @@ class BookingView(generics.ListCreateAPIView):
 
         try:
             start_time = datetime.strptime(start_time_str, '%H:%M:%S').time()
-            print("start_time",start_time)
+            # print("start_time",start_time)
             end_time = datetime.strptime(end_time_str, '%H:%M:%S').time()
-            print("end_time",end_time)
+            # print("end_time",end_time)
             
         except ValueError as e:
             return Response({
@@ -214,6 +214,7 @@ class BookingView(generics.ListCreateAPIView):
         # print("user",user)
         
         Booking_user = Abstract.objects.filter(id=user).first()
+        # print("Booking user",Booking_user)
         email = Booking_user.email
         # print("email",email)
         serializer.is_valid(raise_exception=True)

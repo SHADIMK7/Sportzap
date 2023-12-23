@@ -543,7 +543,7 @@ class PlayerView(generics.ListCreateAPIView):
                 team = Team.objects.filter(team_user_id = customer).first()
                 if team:
                     teams = team.id
-                    print(teams)
+                    # print(teams)
                     serializer.save(player_user = customer)
                     player_instance = serializer.instance
                     player_instance.teams.add(team)
@@ -898,11 +898,19 @@ class MatchInvitationView(generics.CreateAPIView):
                             'data': ''})
             
         user_team = Team.objects.filter(team_user = customer).first()
+        if not user_team:
+            return Response({
+                        'status': "error",
+                        'message': "Invalid team1 ID, Maybe user has team",
+                        'response_code': status.HTTP_400_BAD_REQUEST,
+                        'data': ''
+                    })
         team1_id = user_team.id
+        
         # team1_id = request.data.get('sender_team')
         # team2_id = request.data.get('receiver_team')
         all_teams = Team.objects.exclude(pk=team1_id)
-        print(all_teams)
+        # print(all_teams)
         
         for team_2 in all_teams:
             try:
@@ -1005,6 +1013,7 @@ class MatchAcceptInvitationView(generics.UpdateAPIView):
                             'message': "Invitation accepted",
                             'response_code': status.HTTP_200_OK,
                             'data': ''})
+        
  
 class TurfRatingView(generics.ListAPIView):
     queryset = TurfRating.objects.all()
@@ -1040,7 +1049,6 @@ class CreateTurfRating(generics.ListCreateAPIView):
         user = self.request.user.id
         # user = data.get('userid')
         turf_id = self.kwargs['pk']
-        print(turf_id)
         request.data['turfid'] = turf_id
         request.data['userid'] = user
         if user:
@@ -1051,11 +1059,8 @@ class CreateTurfRating(generics.ListCreateAPIView):
                 
                 ai_url = "https://1a23-116-68-110-250.ngrok-free.app/sent/sentiment"
                 ai_response = requests.get(ai_url).json()
-                print(ai_response)
                 
                 turf_rating_data = [item for item in ai_response if item.get('turfid') == int(turf_id)]
-                print(turf_rating_data)
-
 
                 if turf_rating_data and 'weighted_rating' in turf_rating_data[0]:
                     weighted_rating = turf_rating_data[0]['weighted_rating']
